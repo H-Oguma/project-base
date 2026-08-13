@@ -65,7 +65,7 @@ priority: high
   3. (サブエージェント群) **新規ブランチで作業**:
      - researcher (flash) → 事前調査
      - planner (inherit) → 設計方針（必要な場合）
-     - worker (inherit) → 実装・テスト作成
+     - worker (inherit) → 実装・テスト作成・ドキュメント整備（対応内容に応じて設計書等の整備も併せて実施する）
      - tester (flash) → テスト実行（失敗時は worker へ）
-  4. (reviewer) **対応内容のレビュー**: PR作成前の必須レビュー（指摘時は worker へ）。
+  4. (reviewer) **対応内容のレビュー**: PR作成前の必須レビュー（ドキュメント対応の要否も含めてレビューする。指摘時は worker へ）。
   5. (親エージェント) **PR作成**: レビューをパスしたらPRを作成する。
