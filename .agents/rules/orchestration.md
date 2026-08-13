@@ -29,6 +29,7 @@ priority: high
 - `flash` で済むタスクに `inherit` や `pro` を使わないこと。
 - `pro` モデルは**ユーザーが明示的に指示した場合のみ**使用可。
 - 迷ったら `flash` を試し、品質が不十分な場合のみ `inherit` にエスカレーションする。
+- ※ ただし `worker` と `planner` は標準で `inherit` 推奨。上記エスカレーションルールは `researcher` / `tester` / `reviewer` に適用。
 
 ## 3. サブエージェントの再利用
 
@@ -52,12 +53,14 @@ priority: high
 一般的な開発タスクでは、以下の順序でサブエージェントを活用する：
 
 ```
-1. researcher (flash)  → 事前調査・影響範囲の確認
-2. planner (inherit)   → 設計方針の立案（必要な場合のみ）
-3. worker (inherit)    → 実装・テスト作成
-4. tester (flash)      → テスト実行・結果確認
-5. reviewer (flash)    → コードレビュー
-6. （親エージェント）    → PR作成
+1. （親エージェント）    → Issue起票 & ブランチ作成（workflow.md準拠・必須）
+2. researcher (flash)  → 事前調査・影響範囲の確認
+3. planner (inherit)   → 設計方針の立案（必要な場合のみ）
+4. worker (inherit)    → 実装・テスト作成
+5. tester (flash)      → テスト実行・結果確認（失敗時は 4 へ戻る）
+6. reviewer (flash)    → コードレビュー（Critical/Warning指摘ありの場合は 4 へ戻る）
+7. （親エージェント）    → PR作成
 ```
 
-> 注意: 全ステップが必要なわけではない。単純なバグ修正なら researcher → worker → tester → reviewer で十分。
+> 注意: 全ステップが必要なわけではない。単純なバグ修正なら 1 → 4 → 5 → 6 → 7 で十分。
+> ただし、ステップ1（Issue起票 & ブランチ作成）は**省略不可**。
