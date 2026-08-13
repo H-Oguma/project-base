@@ -1,0 +1,7 @@
+[lint]
+select = ["E", "F", "B", "I"]
+ignore = []
+
+[lint.flake8-bugbear]
+# FastAPIのDepends等をデフォルト引数で使用するのを許可
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Path", "fastapi.Body"]
