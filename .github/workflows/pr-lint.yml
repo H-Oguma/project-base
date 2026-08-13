@@ -1,0 +1,177 @@
+name: PR Lint
+
+# GitHub Actions の pull_request イベントタイプ
+# "synchronize" は正しいスペル（"synchronized" ではない点に注意）
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+    branches:
+      - main
+
+jobs:
+  pr-body-check:
+    name: PR Body Format Check
+    runs-on: ubuntu-latest
+    # pull-requests: write で PR へのコメント作成・更新・削除が可能
+    # （GitHub では PR コメントは内部的に Issues API を使用するが、
+    #  pull-requests: write で両方カバーされる）
+    permissions:
+      pull-requests: write
+    steps:
+      - name: PR本文のフォーマットチェック
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.pull_request.body || '';
+            const errors = [];
+
+            // ボットコメント識別用の一意マーカー（他Botとの誤検出を防止）
+            const BOT_MARKER = '<!-- pr-lint-bot-marker -->';
+
+            // ============================================================
+            // ヘルパー: セクション内容を安全に抽出する
+            // 「次の ## または ### 見出し、またはEOF」までをマッチさせる
+            // ============================================================
+            function extractSection(heading) {
+              const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              const regex = new RegExp(escaped + '[\\s\\S]*?(?=\\n#{2,3} |$)');
+              const match = body.match(regex);
+              return match ? match[0] : null;
+            }
+
+            // ============================================================
+            // 1. 変更種別: チェックボックスが1つ以上チェックされているか
+            // ============================================================
+            const changeTypeSection = extractSection('## 変更種別');
+            if (changeTypeSection) {
+              const checked = (changeTypeSection.match(/- \[x\]/gi) || []).length;
+              if (checked === 0) {
+                errors.push('❌ **変更種別**: 1つ以上チェックしてください（feature / bugfix / refactor / docs / chore）');
+              }
+            } else {
+              errors.push('❌ **変更種別**: セクションが見つかりません');
+            }
+
+            // ============================================================
+            // 2. 影響範囲: チェックボックスが1つ以上チェックされているか
+            // ============================================================
+            const scopeSection = extractSection('## 影響範囲');
+            if (scopeSection) {
+              const checked = (scopeSection.match(/- \[x\]/gi) || []).length;
+              if (checked === 0) {
+                errors.push('❌ **影響範囲**: 1つ以上チェックしてください（frontend / backend / infra / docs）');
+              }
+            } else {
+              errors.push('❌ **影響範囲**: セクションが見つかりません');
+            }
+
+            // ============================================================
+            // 3. 関連Issue: "Closes #数字" or "Fixes #数字" or "Resolves #数字" が記載されているか
+            // ============================================================
+            const issueSection = extractSection('## 関連Issue');
+            if (issueSection) {
+              const hasIssueRef = /(?:closes|fixes|resolves)\s+#\d+/i.test(issueSection);
+              if (!hasIssueRef) {
+                errors.push('❌ **関連Issue**: `Closes #番号` の形式でIssueを紐づけてください');
+              }
+            } else {
+              errors.push('❌ **関連Issue**: セクションが見つかりません');
+            }
+
+            // ============================================================
+            // 4. 「何を変更したか」が空でないか
+            // ============================================================
+            const whatSection = extractSection('### 何を変更したか');
+            if (whatSection) {
+              // テンプレートのプレースホルダーやコメントを除外して、実質的な記載があるか
+              const content = whatSection
+                .replace(/### 何を変更したか/, '')
+                .replace(/<!--[\s\S]*?-->/g, '')
+                .replace(/-\s*$/gm, '')
+                .trim();
+              if (content.length === 0) {
+                errors.push('❌ **何を変更したか**: 変更内容を具体的に記載してください');
+              }
+            } else {
+              errors.push('❌ **何を変更したか**: セクションが見つかりません');
+            }
+
+            // ============================================================
+            // 5. 「なぜ変更したか」が空でないか
+            // ============================================================
+            const whySection = extractSection('### なぜ変更したか');
+            if (whySection) {
+              const content = whySection
+                .replace(/### なぜ変更したか/, '')
+                .replace(/<!--[\s\S]*?-->/g, '')
+                .trim();
+              if (content.length === 0) {
+                errors.push('❌ **なぜ変更したか**: 変更の背景・理由を記載してください');
+              }
+            } else {
+              errors.push('❌ **なぜ変更したか**: セクションが見つかりません');
+            }
+
+            // ============================================================
+            // 結果の出力
+            // ============================================================
+            if (errors.length > 0) {
+              const comment = [
+                BOT_MARKER,
+                '## ⚠️ PR本文のフォーマットチェック',
+                '',
+                '以下の項目が未記入または不足しています。修正をお願いします。',
+                '',
+                ...errors,
+                '',
+                '---',
+                '> このチェックは `.github/workflows/pr-lint.yml` で自動実行されています。',
+              ].join('\n');
+
+              // 既存のボットコメントを探して更新、なければ新規作成
+              const { data: comments } = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+              });
+
+              const botComment = comments.find(c => c.body && c.body.includes(BOT_MARKER));
+
+              if (botComment) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: botComment.id,
+                  body: comment,
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.payload.pull_request.number,
+                  body: comment,
+                });
+              }
+
+              // warning として出力（マージはブロックしない）
+              core.warning('PR本文のフォーマットに不足があります。PRコメントを確認してください。');
+            } else {
+              // チェック通過時は既存のボットコメントを削除
+              const { data: comments } = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+              });
+
+              const botComment = comments.find(c => c.body && c.body.includes(BOT_MARKER));
+
+              if (botComment) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: botComment.id,
+                });
+              }
+
+              core.info('✅ PR本文のフォーマットチェックに合格しました');
+            }
