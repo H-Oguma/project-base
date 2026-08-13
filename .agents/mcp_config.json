@@ -1,11 +1,10 @@
 {
   "mcpServers": {
-    "postgres-dev": {
+    "memory": {
       "command": "npx",
       "args": [
         "-y",
-        "@modelcontextprotocol/server-postgres",
-        "${DATABASE_URL}"
+        "@modelcontextprotocol/server-memory"
       ]
     }
   }
