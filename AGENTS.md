@@ -11,11 +11,30 @@
 このプロジェクトは「AI駆動開発のベース（テンプレート）」として設計されています。新しいプロジェクトを開始する際の土台としてコピーして使用することを想定しています。
 
 ## 3. ディレクトリ構成
-- `.agents/`: AIエージェント用の詳細ルールやスキル定義
-- `.github/`: GitHub Actions (CI/CD) や Issue/PR テンプレート
-- `backend/`: FastAPIベースのバックエンドアプリケーション
-- `frontend/`: React + Vite ベースのフロントエンドアプリケーション
-- `docs/`: プロジェクトの設計書、アーキテクチャドキュメント
+プロジェクトの主要なディレクトリとファイルは以下の通り配置されています。
+
+```text
+.
+├── .agents/          # AIエージェント用の詳細ルールやスキル定義
+│   ├── rules/        # 開発フロー、TDD、セキュリティなどのAI向けルール
+│   ├── scripts/      # 補助スクリプト
+│   └── skills/       # カスタムスキルの定義
+├── .github/          # GitHub Actions (CI/CD) や Issue/PR テンプレート
+├── backend/          # FastAPIベースのバックエンドアプリケーション
+│   ├── main.py       # APIエンドポイント
+│   ├── database.py   # DB設定
+│   ├── models.py     # データモデル
+│   └── test_main.py  # バックエンドテスト
+├── frontend/         # React + Vite ベースのフロントエンドアプリケーション
+│   ├── src/          # Reactコンポーネント
+│   └── package.json  # パッケージ・スクリプト管理
+├── docs/             # プロジェクトの設計書、アーキテクチャドキュメント
+├── scripts/          # 開発セットアップ等のユーティリティスクリプト
+├── docker-compose.yml# ローカル開発用のコンテナ環境定義
+├── Makefile          # テストやLint等のタスクランナー
+├── AGENTS.md         # AI用メタドキュメント（本ファイル）
+└── README.md         # プロジェクト全体の概要
+```
 
 ## 4. 技術スタック
 ### Frontend
