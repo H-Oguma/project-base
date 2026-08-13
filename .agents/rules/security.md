@@ -1,6 +1,6 @@
 ---
 title: プロジェクト・セキュリティ基準
-activation: always_on
+description: "認証、DB、API、およびセキュリティに関連する設定ファイルやコードの編集時に読み込まれます。"
 priority: high
 ---
 
