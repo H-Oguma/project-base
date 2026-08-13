@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ./scripts/enforce_workflow.sh",
+            "command": "bash ./.agents/scripts/enforce_workflow.sh",
             "timeout": 10
           }
         ]
