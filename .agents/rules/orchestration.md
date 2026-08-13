@@ -6,19 +6,58 @@ priority: high
 
 # Agent Orchestration Guidelines
 
-This project strictly follows cost optimization and efficient resource management for AI agents. All agents MUST adhere to the following rules when assigning tasks or spawning subagents.
+本プロジェクトではコスト最適化と効率的なリソース管理を厳守する。
+サブエージェントの呼び出し・管理は以下のルールに従うこと。
 
-## 1. Subagent Model Selection
-- Do NOT default to using the 'pro' model for all subagents.
-- For simple tasks such as codebase research, file reading, log analysis, or web searching, ALWAYS invoke subagents with the `flash` or `flash_lite` model.
-- Reserve the `pro` model exclusively for complex tasks like architectural design, deep reasoning, or large-scale refactoring.
+## 1. タスク種別ごとのサブエージェント選択
 
-## 2. Subagent Reuse
-- Before invoking a new subagent, check if there is an existing idle subagent capable of handling the task.
-- Use the `send_message` tool to assign new tasks to existing subagents rather than creating a new conversation context, which incurs additional initialization overhead.
+タスクの内容に応じて、以下の表に基づき最適なサブエージェントを選択すること。
 
-## 3. Resource Cleanup
-- When a subagent or background task is no longer needed and its purpose has been fulfilled, immediately terminate it using the `manage_subagents` (kill) or `manage_task` (kill) tools to free up resources.
+| タスク種別 | 呼び出すサブエージェント | モデル |
+|:--|:--|:--|
+| コード調査・影響範囲分析 | `researcher` | `flash` |
+| Web検索・技術調査 | `researcher` | `flash` |
+| 機能実装・コード編集 | `worker` | `inherit` |
+| テストコード作成 | `worker` | `inherit` |
+| テスト実行・結果分析 | `tester` | `flash` |
+| コードレビュー（PR前必須） | `reviewer` | `flash` |
+| 設計相談・技術選定 | `planner` | `inherit` |
+| タスク分解・計画立案 | `planner` | `inherit` |
 
-## 4. Workspace Management
-- When invoking subagents, default to `Workspace: 'inherit'` or `'share'` unless an isolated branch is strictly necessary for destructive testing. Avoid unnecessary workspace branching.
+## 2. サブエージェントのモデル選択
+
+- `flash` で済むタスクに `inherit` や `pro` を使わないこと。
+- `pro` モデルは**ユーザーが明示的に指示した場合のみ**使用可。
+- 迷ったら `flash` を試し、品質が不十分な場合のみ `inherit` にエスカレーションする。
+
+## 3. サブエージェントの再利用
+
+- 新しいサブエージェントを起動する前に、`manage_subagents` (list) で既存の idle サブエージェントを確認する。
+- 同じ種別の idle サブエージェントがあれば `send_message` で再利用する。
+- 種別が異なる場合は新規起動する（researcher に worker の仕事をさせない）。
+
+## 4. リソース解放
+
+- サブエージェントの目的が達成されたら、速やかに `manage_subagents` (kill) で終了させる。
+- バックグラウンドタスクも同様に `manage_task` (kill) で解放する。
+
+## 5. ワークスペース管理
+
+- サブエージェント起動時は原則 `Workspace: 'inherit'` を使用する。
+- 破壊的テストが必要な場合のみ `'branch'` を使用する。
+- 不要なワークスペース分岐は行わない。
+
+## 6. 標準的な開発フロー
+
+一般的な開発タスクでは、以下の順序でサブエージェントを活用する：
+
+```
+1. researcher (flash)  → 事前調査・影響範囲の確認
+2. planner (inherit)   → 設計方針の立案（必要な場合のみ）
+3. worker (inherit)    → 実装・テスト作成
+4. tester (flash)      → テスト実行・結果確認
+5. reviewer (flash)    → コードレビュー
+6. （親エージェント）    → PR作成
+```
+
+> 注意: 全ステップが必要なわけではない。単純なバグ修正なら researcher → worker → tester → reviewer で十分。
