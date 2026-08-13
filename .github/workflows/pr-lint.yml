@@ -1,5 +1,7 @@
 name: PR Lint
 
+# GitHub Actions の pull_request イベントタイプ
+# "synchronize" は正しいスペル（"synchronized" ではない点に注意）
 on:
   pull_request:
     types: [opened, edited, synchronize]
@@ -10,6 +12,9 @@ jobs:
   pr-body-check:
     name: PR Body Format Check
     runs-on: ubuntu-latest
+    # pull-requests: write で PR へのコメント作成・更新・削除が可能
+    # （GitHub では PR コメントは内部的に Issues API を使用するが、
+    #  pull-requests: write で両方カバーされる）
     permissions:
       pull-requests: write
     steps:
@@ -20,12 +25,26 @@ jobs:
             const body = context.payload.pull_request.body || '';
             const errors = [];
 
+            // ボットコメント識別用の一意マーカー（他Botとの誤検出を防止）
+            const BOT_MARKER = '<!-- pr-lint-bot-marker -->';
+
+            // ============================================================
+            // ヘルパー: セクション内容を安全に抽出する
+            // 「次の ## または ### 見出し、またはEOF」までをマッチさせる
+            // ============================================================
+            function extractSection(heading) {
+              const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              const regex = new RegExp(escaped + '[\\s\\S]*?(?=\\n#{2,3} |$)');
+              const match = body.match(regex);
+              return match ? match[0] : null;
+            }
+
             // ============================================================
             // 1. 変更種別: チェックボックスが1つ以上チェックされているか
             // ============================================================
-            const changeTypeSection = body.match(/## 変更種別[\s\S]*?(?=## 影響範囲)/);
+            const changeTypeSection = extractSection('## 変更種別');
             if (changeTypeSection) {
-              const checked = (changeTypeSection[0].match(/- \[x\]/gi) || []).length;
+              const checked = (changeTypeSection.match(/- \[x\]/gi) || []).length;
               if (checked === 0) {
                 errors.push('❌ **変更種別**: 1つ以上チェックしてください（feature / bugfix / refactor / docs / chore）');
               }
@@ -36,9 +55,9 @@ jobs:
             // ============================================================
             // 2. 影響範囲: チェックボックスが1つ以上チェックされているか
             // ============================================================
-            const scopeSection = body.match(/## 影響範囲[\s\S]*?(?=## 関連Issue)/);
+            const scopeSection = extractSection('## 影響範囲');
             if (scopeSection) {
-              const checked = (scopeSection[0].match(/- \[x\]/gi) || []).length;
+              const checked = (scopeSection.match(/- \[x\]/gi) || []).length;
               if (checked === 0) {
                 errors.push('❌ **影響範囲**: 1つ以上チェックしてください（frontend / backend / infra / docs）');
               }
@@ -47,11 +66,11 @@ jobs:
             }
 
             // ============================================================
-            // 3. 関連Issue: "Closes #数字" or "Fixes #数字" が記載されているか
+            // 3. 関連Issue: "Closes #数字" or "Fixes #数字" or "Resolves #数字" が記載されているか
             // ============================================================
-            const issueSection = body.match(/## 関連Issue[\s\S]*?(?=## 変更の概要)/);
+            const issueSection = extractSection('## 関連Issue');
             if (issueSection) {
-              const hasIssueRef = /(?:closes|fixes|resolves)\s+#\d+/i.test(issueSection[0]);
+              const hasIssueRef = /(?:closes|fixes|resolves)\s+#\d+/i.test(issueSection);
               if (!hasIssueRef) {
                 errors.push('❌ **関連Issue**: `Closes #番号` の形式でIssueを紐づけてください');
               }
@@ -62,10 +81,10 @@ jobs:
             // ============================================================
             // 4. 「何を変更したか」が空でないか
             // ============================================================
-            const whatSection = body.match(/### 何を変更したか[\s\S]*?(?=### なぜ変更したか)/);
+            const whatSection = extractSection('### 何を変更したか');
             if (whatSection) {
               // テンプレートのプレースホルダーやコメントを除外して、実質的な記載があるか
-              const content = whatSection[0]
+              const content = whatSection
                 .replace(/### 何を変更したか/, '')
                 .replace(/<!--[\s\S]*?-->/g, '')
                 .replace(/-\s*$/gm, '')
@@ -80,9 +99,9 @@ jobs:
             // ============================================================
             // 5. 「なぜ変更したか」が空でないか
             // ============================================================
-            const whySection = body.match(/### なぜ変更したか[\s\S]*?(?=## 主な変更ファイル)/);
+            const whySection = extractSection('### なぜ変更したか');
             if (whySection) {
-              const content = whySection[0]
+              const content = whySection
                 .replace(/### なぜ変更したか/, '')
                 .replace(/<!--[\s\S]*?-->/g, '')
                 .trim();
@@ -98,6 +117,7 @@ jobs:
             // ============================================================
             if (errors.length > 0) {
               const comment = [
+                BOT_MARKER,
                 '## ⚠️ PR本文のフォーマットチェック',
                 '',
                 '以下の項目が未記入または不足しています。修正をお願いします。',
@@ -115,9 +135,7 @@ jobs:
                 issue_number: context.payload.pull_request.number,
               });
 
-              const botComment = comments.find(
-                c => c.user.type === 'Bot' && c.body.includes('PR本文のフォーマットチェック')
-              );
+              const botComment = comments.find(c => c.body && c.body.includes(BOT_MARKER));
 
               if (botComment) {
                 await github.rest.issues.updateComment({
@@ -145,9 +163,7 @@ jobs:
                 issue_number: context.payload.pull_request.number,
               });
 
-              const botComment = comments.find(
-                c => c.user.type === 'Bot' && c.body.includes('PR本文のフォーマットチェック')
-              );
+              const botComment = comments.find(c => c.body && c.body.includes(BOT_MARKER));
 
               if (botComment) {
                 await github.rest.issues.deleteComment({

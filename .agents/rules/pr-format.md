@@ -1,6 +1,5 @@
 ---
 title: PR作成フォーマットルール
-description: "AIがPull Requestを作成する際の記述ルール。PRテンプレートの各セクションを正しく・統一的に記載するための指針。"
 activation: always_on
 priority: high
 ---
@@ -22,7 +21,7 @@ AIがPull Requestを作成する際は、`.github/PULL_REQUEST_TEMPLATE.md` に�
 - **必ず1つ以上**チェックすること。変更がどのレイヤーに影響するかを正確に判断する。
 
 ### 関連Issue
-- **必ず** `Closes #番号` の形式でIssueを紐づけること。
+- **必ず** `Closes #番号` の形式でIssueを紐づけること。`Fixes #番号` や `Resolves #番号` でも可。
 - 複数のIssueに関連する場合は `Closes #1, Closes #2` のように列記する。
 
 ### 何を変更したか
