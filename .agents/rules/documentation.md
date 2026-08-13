@@ -1,6 +1,6 @@
 ---
 title: 設計書更新ルールの徹底
-activation: always_on
+description: "APIエンドポイント、DBスキーマ、UIコンポーネントなどの設計変更を伴う実装時や、タスク完了時に読み込まれます。"
 priority: high
 ---
 
