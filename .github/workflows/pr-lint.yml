@@ -1,0 +1,161 @@
+name: PR Lint
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+    branches:
+      - main
+
+jobs:
+  pr-body-check:
+    name: PR Body Format Check
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: PR本文のフォーマットチェック
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.pull_request.body || '';
+            const errors = [];
+
+            // ============================================================
+            // 1. 変更種別: チェックボックスが1つ以上チェックされているか
+            // ============================================================
+            const changeTypeSection = body.match(/## 変更種別[\s\S]*?(?=## 影響範囲)/);
+            if (changeTypeSection) {
+              const checked = (changeTypeSection[0].match(/- \[x\]/gi) || []).length;
+              if (checked === 0) {
+                errors.push('❌ **変更種別**: 1つ以上チェックしてください（feature / bugfix / refactor / docs / chore）');
+              }
+            } else {
+              errors.push('❌ **変更種別**: セクションが見つかりません');
+            }
+
+            // ============================================================
+            // 2. 影響範囲: チェックボックスが1つ以上チェックされているか
+            // ============================================================
+            const scopeSection = body.match(/## 影響範囲[\s\S]*?(?=## 関連Issue)/);
+            if (scopeSection) {
+              const checked = (scopeSection[0].match(/- \[x\]/gi) || []).length;
+              if (checked === 0) {
+                errors.push('❌ **影響範囲**: 1つ以上チェックしてください（frontend / backend / infra / docs）');
+              }
+            } else {
+              errors.push('❌ **影響範囲**: セクションが見つかりません');
+            }
+
+            // ============================================================
+            // 3. 関連Issue: "Closes #数字" or "Fixes #数字" が記載されているか
+            // ============================================================
+            const issueSection = body.match(/## 関連Issue[\s\S]*?(?=## 変更の概要)/);
+            if (issueSection) {
+              const hasIssueRef = /(?:closes|fixes|resolves)\s+#\d+/i.test(issueSection[0]);
+              if (!hasIssueRef) {
+                errors.push('❌ **関連Issue**: `Closes #番号` の形式でIssueを紐づけてください');
+              }
+            } else {
+              errors.push('❌ **関連Issue**: セクションが見つかりません');
+            }
+
+            // ============================================================
+            // 4. 「何を変更したか」が空でないか
+            // ============================================================
+            const whatSection = body.match(/### 何を変更したか[\s\S]*?(?=### なぜ変更したか)/);
+            if (whatSection) {
+              // テンプレートのプレースホルダーやコメントを除外して、実質的な記載があるか
+              const content = whatSection[0]
+                .replace(/### 何を変更したか/, '')
+                .replace(/<!--[\s\S]*?-->/g, '')
+                .replace(/-\s*$/gm, '')
+                .trim();
+              if (content.length === 0) {
+                errors.push('❌ **何を変更したか**: 変更内容を具体的に記載してください');
+              }
+            } else {
+              errors.push('❌ **何を変更したか**: セクションが見つかりません');
+            }
+
+            // ============================================================
+            // 5. 「なぜ変更したか」が空でないか
+            // ============================================================
+            const whySection = body.match(/### なぜ変更したか[\s\S]*?(?=## 主な変更ファイル)/);
+            if (whySection) {
+              const content = whySection[0]
+                .replace(/### なぜ変更したか/, '')
+                .replace(/<!--[\s\S]*?-->/g, '')
+                .trim();
+              if (content.length === 0) {
+                errors.push('❌ **なぜ変更したか**: 変更の背景・理由を記載してください');
+              }
+            } else {
+              errors.push('❌ **なぜ変更したか**: セクションが見つかりません');
+            }
+
+            // ============================================================
+            // 結果の出力
+            // ============================================================
+            if (errors.length > 0) {
+              const comment = [
+                '## ⚠️ PR本文のフォーマットチェック',
+                '',
+                '以下の項目が未記入または不足しています。修正をお願いします。',
+                '',
+                ...errors,
+                '',
+                '---',
+                '> このチェックは `.github/workflows/pr-lint.yml` で自動実行されています。',
+              ].join('\n');
+
+              // 既存のボットコメントを探して更新、なければ新規作成
+              const { data: comments } = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+              });
+
+              const botComment = comments.find(
+                c => c.user.type === 'Bot' && c.body.includes('PR本文のフォーマットチェック')
+              );
+
+              if (botComment) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: botComment.id,
+                  body: comment,
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.payload.pull_request.number,
+                  body: comment,
+                });
+              }
+
+              // warning として出力（マージはブロックしない）
+              core.warning('PR本文のフォーマットに不足があります。PRコメントを確認してください。');
+            } else {
+              // チェック通過時は既存のボットコメントを削除
+              const { data: comments } = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+              });
+
+              const botComment = comments.find(
+                c => c.user.type === 'Bot' && c.body.includes('PR本文のフォーマットチェック')
+              );
+
+              if (botComment) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: botComment.id,
+                });
+              }
+
+              core.info('✅ PR本文のフォーマットチェックに合格しました');
+            }
