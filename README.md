@@ -18,15 +18,29 @@ Cursor、Windsurf、GitHub Copilot、Cline などのAIアシスタントと協�
 # 1. テンプレートからリポジトリを作成・クローン後、ディレクトリに移動
 cd your-new-project
 
-# 2. 依存関係のインストール（必要に応じて）
-cd backend && pip install -r requirements.txt
-cd ../frontend && npm install
-cd ..
+# 2. 初期化スクリプトの実行（プロジェクト名の置換や依存関係のインストールが行われます）
+make setup
 
 # 3. テストとLintの実行確認
 make test-all
 make lint
+
+# 4. GitHub リポジトリを作成し、Pushする
+gh repo create your-new-project --public --source=. --remote=origin --push
 ```
+
+## 🔄 Issue・PR 駆動開発のフロー
+
+本プロジェクトは GitHub Issue と PR を使った開発を推奨しています。用意されている AI エージェント用スキルを活用し、以下のフローで開発を進めてください。
+
+1. **タスクの開始 (`/start` コマンドの活用)**:
+   AIアシスタント（エージェント）に対して **「`/start [タスク内容]`」** と指示すると、内部の `task-init` スキルが作動し、以下を自動化します。
+   - GitHub に新規 Issue を起票
+   - `issue-[番号]-[概要]` という名前の作業ブランチを作成してチェックアウト
+2. **実装とテスト**:
+   作成されたブランチ上で、AIと共に実装を進めます。`make test-all` で品質を確認します。
+3. **Pull Requestの作成**:
+   実装完了後、GitHubにPushしてPull Requestを作成します。`.github/PULL_REQUEST_TEMPLATE.md` が自動適用されます。PR内に `Fixes #Issue番号` と記載することで、マージ時に自動でIssueがクローズされます。
 
 ## 🤖 AIエージェントへの指示方法
 
