@@ -59,10 +59,13 @@ priority: high
 - **ワークスペース**:
   原則 `Workspace: 'inherit'`。破壊的テストが必要な場合のみ `'branch'`。
 - **標準的な開発フロー**:
-  1. (親エージェント) Issue起票 & ブランチ作成（必須）
-  2. researcher (flash) → 事前調査
-  3. planner (inherit) → 設計方針（必要な場合）
-  4. worker (inherit) → 実装・テスト作成
-  5. tester (flash) → テスト実行（失敗時は4へ）
-  6. reviewer (flash) → コードレビュー（指摘時は4へ）
-  7. (親エージェント) PR作成
+  作業着手時は必ず以下の手順を遵守すること。
+  1. (親エージェント) **Issue起票**: 対応方針を含めてIssueを作成する。
+  2. (親エージェント) **ブランチ作成**: `main` を最新化（pull）してから作業用ブランチを切る。
+  3. (サブエージェント群) **新規ブランチで作業**:
+     - researcher (flash) → 事前調査
+     - planner (inherit) → 設計方針（必要な場合）
+     - worker (inherit) → 実装・テスト作成
+     - tester (flash) → テスト実行（失敗時は worker へ）
+  4. (reviewer) **対応内容のレビュー**: PR作成前の必須レビュー（指摘時は worker へ）。
+  5. (親エージェント) **PR作成**: レビューをパスしたらPRを作成する。
