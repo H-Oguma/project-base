@@ -1,4 +1,10 @@
 {
-  "pre_tool_call": [],
+  "pre_tool_call": [
+    {
+      "tools": ["write_to_file", "replace_file_content", "multi_replace_file_content"],
+      "command": "bash .agents/scripts/enforce_workflow.sh",
+      "description": "mainブランチでの直接のファイル編集を禁止し、Issue起票と作業ブランチ作成を強制するガードレール"
+    }
+  ],
   "post_tool_call": []
 }
