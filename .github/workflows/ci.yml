@@ -10,7 +10,7 @@ on:
 
 jobs:
   backend-test:
-    name: Backend Tests
+    name: Backend Tests & Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -33,7 +33,7 @@ jobs:
           pytest
 
   frontend-test:
-    name: Frontend Tests
+    name: Frontend Tests & Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
