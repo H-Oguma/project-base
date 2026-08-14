@@ -6,7 +6,7 @@ Cursor、Windsurf、GitHub Copilot、Cline などのAIアシスタントと協�
 ## 🌟 特徴
 
 - **AIコンテキスト (`AGENTS.md`)**: AIがプロジェクトの全体像を即座に把握するためのメタドキュメント。
-- **AIツール仕様 (`docs/antigravity_2.0_specs.md`)**: エージェント（Antigravity 2.0等）の操作や設定に関する仕様ドキュメント。
+- **AIツール仕様 (`docs/antigravity-2.0-specs.md`)**: エージェント（Antigravity 2.0等）の操作や設定に関する仕様ドキュメント。
 - **グローバルルール (`.cursorrules`)**: AIエージェントに一貫した振る舞い（テスト駆動、日本語回答など）を強制。
 - **CI/CDパイプライン**: 自動テスト・自動Lintの整備により、AIが生成したコードの品質を担保。
 - **統一されたタスクランナー (`Makefile`)**: AIが迷わずテストやLintを実行できるエントリーポイント。
@@ -33,13 +33,19 @@ Cursor、Windsurf、GitHub Copilot、Cline などのAIアシスタントと協�
 │   ├── public/       # 静的ファイル
 │   ├── package.json  # フロントエンドの依存関係とスクリプト
 │   └── Dockerfile    # フロントエンド用コンテナビルド設定
-├── docs/             # 設計書、アーキテクチャドキュメント
+├── docs/             # 各種ドキュメント（詳細は docs/README.md を参照）
 ├── scripts/          # プロジェクト全体のセットアップ等のユーティリティスクリプト
 ├── docker-compose.yml# ローカル開発用のコンテナオーケストレーション
 ├── Makefile          # タスクランナー (setup, lint, test などの共通コマンド)
 ├── AGENTS.md         # AI向けコンテキスト・グローバルルール
 └── README.md         # 本ドキュメント (プロジェクト概要)
 ```
+
+## 📖 ドキュメント
+
+プロジェクトの設計書、AIワークフロー、セットアップ手順などの詳細は `docs/` ディレクトリにまとめられています。まずは以下の目次ページをご確認ください。
+
+- [**プロジェクト ドキュメント一覧 (`docs/README.md`)**](docs/README.md)
 
 ## 🚀 使い方
 
