@@ -11,6 +11,36 @@ Cursor、Windsurf、GitHub Copilot、Cline などのAIアシスタントと協�
 - **CI/CDパイプライン**: 自動テスト・自動Lintの整備により、AIが生成したコードの品質を担保。
 - **統一されたタスクランナー (`Makefile`)**: AIが迷わずテストやLintを実行できるエントリーポイント。
 
+## 📁 ディレクトリ構成
+
+本プロジェクトの主要なディレクトリとファイルの構成は以下の通りです。
+
+```text
+.
+├── .agents/          # AIエージェント用の設定・ルール群
+│   ├── rules/        # AI向けの各種ルール（開発フロー、テスト、セキュリティ等）
+│   ├── scripts/      # AIが使用する補助スクリプト
+│   └── skills/       # AIエージェントの独自スキル定義
+├── .github/          # GitHub Actions のワークフローおよび Issue/PR テンプレート
+├── backend/          # バックエンドアプリケーション (FastAPI)
+│   ├── main.py       # APIのエンドポイント・ルーティング
+│   ├── database.py   # DB接続・セッション管理
+│   ├── models.py     # SQLAlchemy ORM モデル
+│   ├── test_main.py  # バックエンドのテストコード
+│   └── Dockerfile    # バックエンド用コンテナビルド設定
+├── frontend/         # フロントエンドアプリケーション (React + Vite)
+│   ├── src/          # UIコンポーネント・ロジック
+│   ├── public/       # 静的ファイル
+│   ├── package.json  # フロントエンドの依存関係とスクリプト
+│   └── Dockerfile    # フロントエンド用コンテナビルド設定
+├── docs/             # 設計書、アーキテクチャドキュメント
+├── scripts/          # プロジェクト全体のセットアップ等のユーティリティスクリプト
+├── docker-compose.yml# ローカル開発用のコンテナオーケストレーション
+├── Makefile          # タスクランナー (setup, lint, test などの共通コマンド)
+├── AGENTS.md         # AI向けコンテキスト・グローバルルール
+└── README.md         # 本ドキュメント (プロジェクト概要)
+```
+
 ## 🚀 使い方
 
 このリポジトリをテンプレートとして使用し、新しいプロジェクトを開始してください。
