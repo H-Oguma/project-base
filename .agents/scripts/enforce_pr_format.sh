@@ -2,17 +2,15 @@
 
 # ============================================================================
 # PR作成時フォーマットチェックガード
-# `gh pr create` 実行時に、--body または --body-file 引数の内容をチェックし
-# PRテンプレートに沿っているか（必須セクションが存在するか）を検証する。
+# `gh pr create` 実行時に直接実行をブロックし、
+# /pr コマンド（create-pr スキル）の使用を強制する。
 # ============================================================================
-
-INPUT=$(cat)
 
 python3 -c '
 import sys, json, re
 
 try:
-    input_data = sys.argv[1]
+    input_data = sys.stdin.read()
     if not input_data.strip():
         print(json.dumps({"decision": "allow"}))
         sys.exit(0)
@@ -38,4 +36,4 @@ try:
 except Exception as e:
     # 予期せぬエラーで他のコマンドまでブロックしないよう allow とする
     print(json.dumps({"decision": "allow"}))
-' "$INPUT"
+'
