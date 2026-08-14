@@ -17,3 +17,5 @@
   新しいプロジェクトに Issue 起票 → 実装 → PR → レビュー → リリースの環境を展開するための、AI向けの単体完結版セットアップ手順書です。
 - **[Antigravity 2.0 仕様 (antigravity-2.0-specs.md)](./antigravity-2.0-specs.md)**
   エージェントのアクティビティを起動・監視するためのデスクトップ Electron アプリケーション「Antigravity 2.0」のUI構成や権限設定に関する仕様書です。
+- **[GitHub リポジトリ推奨設定ガイド (github-repository-settings.md)](./github-repository-settings.md)**
+  プロジェクトの品質やセキュリティを保つために、ブラウザの Settings 画面から行うべき推奨設定（Rulesets や自動削除など）をまとめています。
