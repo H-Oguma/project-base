@@ -5,7 +5,7 @@ priority: high
 ---
 
 # Instructions
-AIがPull Requestを作成する際は、`.github/PULL_REQUEST_TEMPLATE.md` に従い、以下のルールを**必ず**遵守すること。
+AIがPull Requestを作成する際は、必ず `create-pr` スキル（または `/pr` コマンド）を使用し、`.github/PULL_REQUEST_TEMPLATE.md` に従い、以下のルールを**必ず**遵守すること。（直接 `gh pr create` でフォーマット違反のPRを作ろうとした場合はHooksによりブロックされます）
 
 ## 基本原則
 - テンプレートの全セクションを**省略せず**記載すること。該当しないセクションは「該当なし」と明記する。
