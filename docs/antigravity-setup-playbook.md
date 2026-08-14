@@ -188,10 +188,50 @@ rm -f "$log"
 exit 0
 ```
 
-### 3-2. `.agents/hooks.json` によるエージェント側の制御 (Option)
+### 3-2. `.agents/hooks.json` によるエージェント側の制御 (必須級)
 
-Antigravity では `hooks.json` を使ってツール実行前後（`PreToolUse` など）に介入できます。
-必要に応じて、`git push` を実行しようとした際に自動でコードレビュー用エージェントを走らせる設定を追加できます。
+AIエージェントに直接「やってはいけない」と指示するだけでは不十分なため、`hooks.json`を使って以下の行動を機械的にブロックします。
+
+1. **`main` ブランチ直接編集防止フック (`workflow-guard`)**
+   - ファイルの編集やコマンド実行ツールが呼ばれる直前にバリデーションスクリプト (`enforce_workflow.sh` など) を実行させます。現在のブランチが `main` だった場合はツール実行を即座にエラーとして弾き、AIが誤って `main` に直接コミットやファイル編集してしまう事故を未然に防ぎます。
+
+2. **PRフォーマット違反防止の仕組み (`pr-format-guard`)**
+   - GitHub CLI (`gh pr create`) などを直接実行させず、用意された専用のスキル（例: `create-pr`）を経由させるため、`run_command` ツールの実行時にコマンド文字列を検査します。
+   - `enforce_pr_format.sh` などで検知し、許可されていないPR作成コマンドが呼ばれた場合は「`create-pr` スキルを使用してください」とエラーメッセージを返し、正しいフローに誘導します。
+
+`.agents/hooks.json` の設定例:
+```json
+{
+  "workflow-guard": {
+    "PreToolUse": [
+      {
+        "matcher": "write_to_file|replace_file_content|multi_replace_file_content|run_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ./.agents/scripts/enforce_workflow.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "pr-format-guard": {
+    "PreToolUse": [
+      {
+        "matcher": "run_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ./.agents/scripts/enforce_pr_format.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
+```
 
 ---
 
@@ -224,6 +264,11 @@ Use the GitHub CLI (`gh`) to create a new issue for the task.
 Create a new branch for the task. Do NOT work directly on the `main` or `master` branch.
 `git checkout -b issue-[number]-[short-description]`
 ```
+
+### `create-pr` スキル
+
+PR作成時にプロジェクト固有のテンプレートやフォーマットルールを強制するためのスキルです。
+`.agents/skills/create-pr/SKILL.md` に配置し、上記の `hooks.json` によるブロックと組み合わせることで、必ずこのスキル経由でPRが作成されるようにします。
 
 ---
 
