@@ -17,7 +17,7 @@ Cursor、Windsurf、GitHub Copilot、Cline などのAIアシスタントと協�
 
 ```text
 .
-├── .agents/          # AIエージェント用の設定・ルール群
+├── .agents/          # [AI専用] エージェント向けの設定・ルール群（人間が読む必要はありません）
 │   ├── rules/        # AI向けの各種ルール（開発フロー、テスト、セキュリティ等）
 │   ├── scripts/      # AIが使用する補助スクリプト
 │   └── skills/       # AIエージェントの独自スキル定義
@@ -37,15 +37,19 @@ Cursor、Windsurf、GitHub Copilot、Cline などのAIアシスタントと協�
 ├── scripts/          # プロジェクト全体のセットアップ等のユーティリティスクリプト
 ├── docker-compose.yml# ローカル開発用のコンテナオーケストレーション
 ├── Makefile          # タスクランナー (setup, lint, test などの共通コマンド)
-├── AGENTS.md         # AI向けコンテキスト・グローバルルール
+├── AGENTS.md         # [AI専用] エージェントがプロジェクトを理解するためのメタドキュメント
 └── README.md         # 本ドキュメント (プロジェクト概要)
 ```
 
 ## 📖 ドキュメント
 
-プロジェクトの設計書、AIワークフロー、セットアップ手順などの詳細は `docs/` ディレクトリにまとめられています。まずは以下の目次ページをご確認ください。
+プロジェクトの設計書、AIワークフロー、セットアップ手順などの詳細は `docs/` ディレクトリにまとめられています。
 
-- [**プロジェクト ドキュメント一覧 (`docs/README.md`)**](docs/README.md)
+| 読者 | おすすめの入り口 |
+|---|---|
+| **初めてこのリポジトリを見る方** | 本 README を一読した後、[ドキュメント一覧 (`docs/README.md`)](docs/README.md) へ |
+| **テンプレートとして使い始めたい方** | 下記の「🚀 使い方」セクション → [セットアップ Playbook (`docs/antigravity-setup-playbook.md`)](docs/antigravity-setup-playbook.md) |
+| **設計や技術的な判断の経緯を知りたい方** | [システム設計書 (`docs/system-design.md`)](docs/system-design.md) → [AIアーキテクチャ設計書 (`docs/ai-architecture.md`)](docs/ai-architecture.md) |
 
 ## 🚀 使い方
 
