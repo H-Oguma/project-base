@@ -14,18 +14,18 @@ setup:
 test-all: test-backend test-frontend
 
 test-backend:
-	cd backend && pytest
+	docker compose run --rm backend pytest
 
 test-frontend:
-	cd frontend && npm run test
+	docker compose run --rm frontend npm run test
 
 lint: lint-backend lint-frontend
 
 lint-backend:
-	cd backend && ruff check .
+	docker compose run --rm backend ruff check .
 
 lint-frontend:
-	cd frontend && npm run lint
+	docker compose run --rm frontend npm run lint
 
 up:
 	docker compose up -d
