@@ -46,6 +46,14 @@ fi
 echo "🗑️  既存のGit履歴を削除し、新規リポジトリとして再初期化します..."
 rm -rf .git
 git init
+
+# Hooksの設定を復元
+if [ -d ".githooks" ]; then
+    echo "🔗 Git Hooksの設定を適用します..."
+    git config core.hooksPath .githooks
+    chmod -R +x .githooks/
+fi
+
 git add .
 git commit -m "feat: initial commit for $PROJECT_NAME"
 
