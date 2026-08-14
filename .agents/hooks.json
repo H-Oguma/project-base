@@ -12,5 +12,19 @@
         ]
       }
     ]
+  },
+  "pr-format-guard": {
+    "PreToolUse": [
+      {
+        "matcher": "run_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ./.agents/scripts/enforce_pr_format.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
   }
 }

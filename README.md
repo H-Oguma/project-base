@@ -70,8 +70,8 @@ gh repo create your-new-project --public --source=. --remote=origin --push
    - `issue-[番号]-[概要]` という名前の作業ブランチを作成してチェックアウト
 2. **実装とテスト**:
    作成されたブランチ上で、AIと共に実装を進めます。`make test-all` で品質を確認します。
-3. **Pull Requestの作成**:
-   実装完了後、GitHubにPushしてPull Requestを作成します。`.github/PULL_REQUEST_TEMPLATE.md` が自動適用されます。PR内に `Fixes #Issue番号` と記載することで、マージ時に自動でIssueがクローズされます。
+3. **Pull Requestの作成 (`/pr` コマンドの活用)**:
+   実装完了後、AIアシスタントに **「`/pr`」** または **「PRを作成して」** と指示すると、内部の `create-pr` スキルが作動し、GitHubのテンプレート（`.github/PULL_REQUEST_TEMPLATE.md`）に沿った正しいフォーマットで起票します。フォーマットを無視して直接作成しようとするとHooksによってブロックされる仕組みになっています。
 
 ## 🤖 AIエージェントへの指示方法
 
