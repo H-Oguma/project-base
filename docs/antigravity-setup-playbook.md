@@ -54,7 +54,7 @@ find . -type f | wc -l && find . -type f \( -path '*/.venv/*' -o -path '*/node_m
 
 プロジェクトルートに `AGENTS.md` を作成し、プロジェクト全体のルールとポインタを定義します。
 
-~~~markdown
+```markdown
 # AI Context & Global Rules
 
 ## 1. グローバルルール (Global Engineering Standard)
@@ -84,7 +84,7 @@ find . -type f | wc -l && find . -type f \( -path '*/.venv/*' -o -path '*/node_m
 ## 6. 機密
 - ルート直下の `<secret-file>` の内容を読み出さない・出力しない・引用しない。
 - 顧客名・個人情報を Issue / PR に含めない。
-~~~
+```
 
 ---
 
@@ -94,7 +94,7 @@ find . -type f | wc -l && find . -type f \( -path '*/.venv/*' -o -path '*/node_m
 
 `AGENTS.md` が肥大化するのを防ぐため、具体的な開発フロー規約は別ファイルに置きます。
 
-~~~markdown
+```markdown
 # <project> 開発フロー規約
 
 ## A. ブランチ命名とベース
@@ -117,7 +117,7 @@ find . -type f | wc -l && find . -type f \( -path '*/.venv/*' -o -path '*/node_m
 ## E. lint / test
 - lint: `<LINT_CMD>` (チェックのみのコマンド。format不可)
 - test: `<TEST_CMD>`
-~~~
+```
 
 ---
 
@@ -195,7 +195,7 @@ Antigravity 2.0 では定型作業を `.agents/skills/` に配置します。
 作業開始時に Issue 起票とブランチ作成を強制するためのスキルです。
 `.agents/skills/task-init/SKILL.md` に配置します。
 
-~~~markdown
+```markdown
 ---
 name: task-init
 slash_command: start
@@ -214,7 +214,7 @@ Use the GitHub CLI (`gh`) to create a new issue for the task.
 ## 2. Create and Checkout a Working Branch
 Create a new branch for the task. Do NOT work directly on the `main` or `master` branch.
 `git checkout -b issue-[number]-[short-description]`
-~~~
+```
 
 ---
 
