@@ -48,10 +48,9 @@ rm -rf .git
 git init
 
 # Hooksの設定を復元
-if [ -d ".githooks" ]; then
+if [ -f "package.json" ]; then
     echo "🔗 Git Hooksの設定を適用します..."
-    git config core.hooksPath .githooks
-    chmod -R +x .githooks/
+    npm run prepare
 fi
 
 git add .
