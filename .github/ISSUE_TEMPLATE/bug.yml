@@ -1,0 +1,53 @@
+name: Bug Report
+description: 不具合の報告はこちら
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        不具合の報告ありがとうございます。優先度と影響範囲（サイズ）を指定してください。
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority (優先度)
+      description: いつ修正すべきですか？
+      options:
+        - "P0: Blocker (本番障害・今すぐ修正)"
+        - "P1: High (重大な不具合・早急に修正)"
+        - "P2: Normal (通常の不具合)"
+        - "P3: Low (軽微な不具合)"
+    validations:
+      required: true
+  - type: dropdown
+    id: size
+    attributes:
+      label: Size (サイズ)
+      description: 修正の規模感はどのくらいですか？
+      options:
+        - "Size: S (原因が明確で、すぐ直せる)"
+        - "Size: M (調査と実装にある程度時間がかかる)"
+        - "Size: L (大規模なリファクタリングやアーキテクチャ変更が必要)"
+    validations:
+      required: true
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: 不具合の概要
+      description: 何が起きましたか？
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 再現手順
+      description: 不具合を再現するための手順を記載してください。
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期待される動作
+      description: 本来はどうなるべきですか？
+    validations:
+      required: true

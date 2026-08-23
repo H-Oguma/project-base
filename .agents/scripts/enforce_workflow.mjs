@@ -39,6 +39,45 @@ try {
   }
   // ------------------------------------------
 
+  // --- タスクサイズ ガードレール (ファイル編集時) ---
+  if (['write_to_file', 'replace_file_content', 'multi_replace_file_content'].includes(toolName)) {
+    try {
+      const branch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
+      const match = branch.match(/issue-(\d+)/i);
+      if (match) {
+        const issueNumber = match[1];
+        // Issueのラベルを取得
+        const labelsStr = execSync(`gh issue view ${issueNumber} --json labels --jq '.[].name' 2>/dev/null || echo ""`, { encoding: 'utf-8' });
+        if (labelsStr.includes('Size: L')) {
+          console.log(JSON.stringify({
+            decision: 'deny',
+            reason: `🚨 [タスク管理ガードレール] 現在作業中の Issue #${issueNumber} は \`Size: L\`（エピック級）に設定されています。\nルールにより、\`Size: L\` のIssueで直接コード（ファイル）を編集することは禁止されています。\n調査や設計のみを行い、\`Size: S\` または \`M\` のサブIssueに分割してから、それぞれのブランチで実装を行ってください。`
+          }));
+          process.exit(0);
+        }
+      }
+    } catch (e) {
+      // ignore errors
+    }
+  }
+  // ------------------------------------------
+
+  // --- タスク管理ガードレール (Issue作成時) ---
+  if (toolName === 'call_mcp_tool' && data.toolCall?.args?.ToolName === 'create_issue') {
+    const labels = data.toolCall?.args?.labels || [];
+    const hasPriority = labels.some(l => l.startsWith('P0') || l.startsWith('P1') || l.startsWith('P2') || l.startsWith('P3'));
+    const hasSize = labels.some(l => l.startsWith('Size:'));
+    
+    if (!hasPriority || !hasSize) {
+      console.log(JSON.stringify({
+        decision: 'deny',
+        reason: '🚨 [タスク管理ガードレール] Issueを起票する際は、必ず優先度（P0/P1/P2/P3）とサイズ（Size: S/M/L）のラベルを指定してください。\n例: `labels: ["P2: Normal", "Size: S"]`'
+      }));
+      process.exit(0);
+    }
+  }
+  // ------------------------------------------
+
   // --- 環境保護ガードレール (全ブランチ共通) ---
   if (toolName === 'run_command') {
     const commandLine = data.toolCall?.args?.CommandLine || '';
@@ -113,7 +152,20 @@ try {
     if (/^\s*git\s+(status|log|branch|diff|show|rev-parse|remote)\b/.test(commandLine)) allowed = true;
     
     // Allowed gh commands
-    if (/^\s*gh\s+issue\s+(create|list|view)\b/.test(commandLine)) allowed = true;
+    if (/^\s*gh\s+issue\s+(create|list|view)\b/.test(commandLine)) {
+      if (/^\s*gh\s+issue\s+create\b/.test(commandLine)) {
+        const hasPriority = /(P0|P1|P2|P3)/.test(commandLine);
+        const hasSize = /Size:\s*[SML]/.test(commandLine);
+        if (!hasPriority || !hasSize) {
+          console.log(JSON.stringify({
+            decision: 'deny',
+            reason: '🚨 [タスク管理ガードレール] CLIからIssueを起票する際は、必ず優先度とサイズのラベルを指定してください。\n例: `gh issue create --label "P2: Normal,Size: S"`'
+          }));
+          process.exit(0);
+        }
+      }
+      allowed = true;
+    }
     if (/^\s*gh\s+pr\s+(list|view|status)\b/.test(commandLine)) allowed = true;
     if (/^\s*gh\s+repo\s+view\b/.test(commandLine)) allowed = true;
     
