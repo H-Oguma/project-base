@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.agents/scripts/enforce_workflow.mjs\"",
+            "command": "node \"${CLAUDE_PROJECT_DIR:-..}/.agents/scripts/enforce_workflow.mjs\"",
             "timeout": 10
           }
         ]
@@ -20,7 +20,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.agents/scripts/enforce_pr_format.mjs\"",
+            "command": "node \"${CLAUDE_PROJECT_DIR:-..}/.agents/scripts/enforce_pr_format.mjs\"",
             "timeout": 10
           }
         ]
