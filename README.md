@@ -1,5 +1,7 @@
 # AI-Driven Development Base Project
 
+> Last Updated: 2026-08-24
+
 このリポジトリは、**AI駆動開発（AI-Driven Development）**をスムーズに行うためのベースプロジェクト（テンプレート）です。
 Cursor、Windsurf、GitHub Copilot、Cline などのAIアシスタントと協働することを前提とした設定が組み込まれています。
 

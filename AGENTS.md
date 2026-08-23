@@ -1,5 +1,7 @@
 # AI Context & Global Rules
 
+> Last Updated: 2026-08-24
+
 このドキュメントは、AIアシスタント（Antigravity, Cursor, Windsurf, Cline 等）が本プロジェクトの全体像とルールを把握するためのメタドキュメント（グローバルルール）です。
 
 ## 1. グローバルルール (Global Engineering Standard)
