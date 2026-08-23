@@ -35,8 +35,8 @@ Cursor、Windsurf、GitHub Copilot、Cline などのAIアシスタントと協�
 │   └── Dockerfile    # フロントエンド用コンテナビルド設定
 ├── docs/             # 各種ドキュメント（詳細は docs/README.md を参照）
 ├── scripts/          # プロジェクト全体のセットアップ等のユーティリティスクリプト
-├── docker-compose.yml# ローカル開発用のコンテナオーケストレーション
-├── Makefile          # タスクランナー (setup, lint, test などの共通コマンド)
+├── docker-compose.yml# 本番ビルドなどの動作確認用（ローカル開発は uv/npm で直接実行）
+├── Makefile          # タスクランナー (setup, lint, test, up などの共通コマンド)
 ├── AGENTS.md         # [AI専用] エージェントがプロジェクトを理解するためのメタドキュメント
 └── README.md         # 本ドキュメント (プロジェクト概要)
 ```
@@ -66,7 +66,11 @@ make setup
 make test-all
 make lint
 
-# 4. GitHub リポジトリを作成し、Pushする
+# 4. ローカル開発サーバーの起動（フロント・バックエンド同時起動）
+make up
+# ※ 停止する場合はターミナルで Ctrl+C を押してください
+
+# 5. GitHub リポジトリを作成し、Pushする
 gh repo create your-new-project --public --source=. --remote=origin --push
 ```
 
