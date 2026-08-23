@@ -40,7 +40,15 @@ try {
   // ------------------------------------------
 
   // --- タスクサイズ・管理 ガードレール (ファイル編集時 & コマンド実行時) ---
-  if (['write_to_file', 'replace_file_content', 'multi_replace_file_content', 'run_command'].includes(toolName)) {
+  let isModifyingTool = ['write_to_file', 'replace_file_content', 'multi_replace_file_content', 'run_command'].includes(toolName);
+  if (toolName === 'call_mcp_tool') {
+    const mcpTool = data.toolCall?.args?.ToolName;
+    if (['create_or_update_file', 'push_files', 'merge_pull_request'].includes(mcpTool)) {
+      isModifyingTool = true;
+    }
+  }
+
+  if (isModifyingTool) {
     try {
       const branch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
       const match = branch.match(/issue-(\d+)/i);
@@ -49,7 +57,8 @@ try {
       let isSafeCommand = false;
       if (toolName === 'run_command') {
         const cmd = data.toolCall?.args?.CommandLine || '';
-        if (/^\s*(gh|git|ls|cat)\b/.test(cmd) && !/[;|`]|&&|\$\(/.test(cmd)) {
+        // 許可するコマンド。ただしリダイレクト(>, <)やパイプ(|)、コマンド連結(&&, ;, ||, バッククォート, $()) は一切禁止
+        if (/^\s*(gh|git|ls|cat)\b/.test(cmd) && !/[;|`><\$&\|]/.test(cmd)) {
           isSafeCommand = true;
         }
       }
