@@ -47,7 +47,7 @@ try {
       if (match) {
         const issueNumber = match[1];
         // Issueのラベルを取得
-        const labelsStr = execSync(`gh issue view ${issueNumber} --json labels --jq '.[].name' 2>/dev/null || echo ""`, { encoding: 'utf-8' });
+        const labelsStr = execSync(`gh issue view ${issueNumber} --json labels --jq '.labels[].name' 2>/dev/null || echo ""`, { encoding: 'utf-8' });
         
         const hasPriority = /(P0|P1|P2|P3)/.test(labelsStr);
         const hasSize = /Size:\s*[SML]/.test(labelsStr);
