@@ -37,6 +37,31 @@ try {
       // ignore git errors
     }
   }
+
+  // --- 子Issueの親Issue紐付けガードレール (Issue作成時) ---
+  if (toolName === 'call_mcp_tool' && data.toolCall?.args?.ToolName === 'create_issue') {
+    try {
+      const branch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
+      const branchIssueMatch = branch.match(/issue-(\d+)/i);
+      
+      if (branchIssueMatch) {
+        const parentIssueNumber = branchIssueMatch[1];
+        const issueBody = data.toolCall?.args?.body || '';
+        
+        // 本文に親Issue番号が含まれているかチェック
+        const regex = new RegExp(`#${parentIssueNumber}\\b`);
+        if (!regex.test(issueBody)) {
+          console.log(JSON.stringify({
+            decision: 'deny',
+            reason: `🚨 [トレーサビリティ違反] 現在のブランチ (issue-${parentIssueNumber}) からサブIssueを作成しようとしていますが、本文に親Issue番号 (#${parentIssueNumber}) へのリンクが含まれていません。\n孤立したIssue (Orphan Issue) の発生を防ぐため、本文に「親Issue: #${parentIssueNumber}」のように必ずリンクを記載してください。`
+          }));
+          process.exit(0);
+        }
+      }
+    } catch (e) {
+      // ignore git errors
+    }
+  }
   // ------------------------------------------
 
   // --- タスクサイズ・管理 ガードレール (ファイル編集時 & コマンド実行時) ---
@@ -149,6 +174,29 @@ try {
   }
   
   if (branch !== 'main' && branch !== 'master') {
+    // ブランチ名に issue-番号 が含まれていない場合は作業をブロック
+    if (!/issue-\d+/.test(branch)) {
+      if (['write_to_file', 'replace_file_content', 'multi_replace_file_content'].includes(toolName)) {
+        console.log(JSON.stringify({
+          decision: 'deny',
+          reason: '🚨 [トレーサビリティ違反] 現在のブランチ名（' + branch + '）に Issue 番号が含まれていません。\nプロジェクトのルールにより、ファイル編集前に必ず `issue-<番号>` を含むブランチ名に変更してください（例: `git branch -m feature/issue-123-xxx`）。'
+        }));
+        process.exit(0);
+      }
+      
+      if (toolName === 'run_command') {
+        const commandLine = data.toolCall?.args?.CommandLine || '';
+        // git branch -m などのリネーム操作や、ブランチ移動操作は許可する
+        if (!/^\s*git\s+(branch|checkout|switch|status|log)/.test(commandLine)) {
+          console.log(JSON.stringify({
+            decision: 'deny',
+            reason: '🚨 [トレーサビリティ違反] 現在のブランチ名（' + branch + '）に Issue 番号が含まれていません。\nプロジェクトのルールにより、ブランチ名に `issue-<番号>` が含まれていない状態での作業コマンド実行はブロックされます。'
+          }));
+          process.exit(0);
+        }
+      }
+    }
+
     console.log(JSON.stringify({ decision: 'allow' }));
     process.exit(0);
   }
@@ -178,7 +226,17 @@ try {
     let allowed = false;
     
     // Allowed Git workflow commands
-    if (/^\s*git\s+(checkout\s+-b|switch\s+-c|branch\s)/.test(commandLine)) allowed = true;
+    if (/^\s*git\s+(checkout\s+-b|switch\s+-c|branch\s)/.test(commandLine)) {
+      // ブランチ名に issue-番号 が含まれているかチェック
+      if (!/issue-\d+/.test(commandLine)) {
+        console.log(JSON.stringify({
+          decision: 'deny',
+          reason: '🚨 [トレーサビリティ違反] 新規ブランチ名には必ず Issue 番号を含める必要があります（例: `git checkout -b feature/issue-123-xxx`）。\n先に `gh issue create` で Issue を起票し、発行された番号を使ってブランチを作成してください。'
+        }));
+        process.exit(0);
+      }
+      allowed = true;
+    }
     if (/^\s*git\s+(pull|fetch)\b/.test(commandLine)) allowed = true;
     if (/^\s*git\s+(status|log|branch|diff|show|rev-parse|remote)\b/.test(commandLine)) allowed = true;
     
@@ -193,6 +251,19 @@ try {
             reason: '🚨 [タスク管理ガードレール] CLIからIssueを起票する際は、必ず優先度とサイズのラベルを指定してください。\n例: `gh issue create --label "P2: Normal,Size: S"`'
           }));
           process.exit(0);
+        // コマンドラインまたはファイル入力などから本文を取得するのは難しいが、
+        // 少なくとも --body 引数に親Issue番号が含まれているかを簡易チェックする
+        const branchIssueMatch = branch.match(/issue-(\d+)/i);
+        if (branchIssueMatch && commandLine.includes('--body')) {
+          const parentIssueNumber = branchIssueMatch[1];
+          const regex = new RegExp(`#${parentIssueNumber}\\b`);
+          if (!regex.test(commandLine)) {
+            console.log(JSON.stringify({
+              decision: 'deny',
+              reason: `🚨 [トレーサビリティ違反] 現在のブランチ (issue-${parentIssueNumber}) からサブIssueをCLIで作成しようとしていますが、--body 内に親Issue番号 (#${parentIssueNumber}) へのリンクが見当たりません。\n孤立したIssueの発生を防ぐため、親Issueへのリンクを記載してください。`
+            }));
+            process.exit(0);
+          }
         }
       }
       allowed = true;
