@@ -121,6 +121,14 @@ jobs:
               if (hasUnchecked) {
                 errors.push('❌ **品質・ドキュメント**: すべてのチェックボックスを確認してください（該当しない場合はN/A等としてチェックを入れてください）');
               }
+              
+              // N/A が含まれている場合、理由が書かれているかチェック
+              if (qualitySection.includes('N/A')) {
+                const reasonMatch = qualitySection.match(/※ N\/Aの理由:\s*(.*)/);
+                if (!reasonMatch || reasonMatch[1].trim().length === 0) {
+                  errors.push('❌ **品質・ドキュメント**: N/A（不要）とした項目がある場合は、その理由（※ N/Aの理由:）を記載してください');
+                }
+              }
             } else {
               errors.push('❌ **品質・ドキュメント**: セクションが見つかりません');
             }
