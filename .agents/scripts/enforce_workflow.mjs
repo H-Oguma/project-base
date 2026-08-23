@@ -39,12 +39,22 @@ try {
   }
   // ------------------------------------------
 
-  // --- タスクサイズ・管理 ガードレール (ファイル編集時) ---
-  if (['write_to_file', 'replace_file_content', 'multi_replace_file_content'].includes(toolName)) {
+  // --- タスクサイズ・管理 ガードレール (ファイル編集時 & コマンド実行時) ---
+  if (['write_to_file', 'replace_file_content', 'multi_replace_file_content', 'run_command'].includes(toolName)) {
     try {
       const branch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
       const match = branch.match(/issue-(\d+)/i);
-      if (match) {
+      
+      // run_commandの場合、ghやgitなどラベル修正や状況確認に必要なコマンドは許可する
+      let isSafeCommand = false;
+      if (toolName === 'run_command') {
+        const cmd = data.toolCall?.args?.CommandLine || '';
+        if (/^\s*(gh|git|ls|cat)\b/.test(cmd) && !/[;|`]|&&|\$\(/.test(cmd)) {
+          isSafeCommand = true;
+        }
+      }
+
+      if (match && !isSafeCommand) {
         const issueNumber = match[1];
         // Issueのラベルを取得
         const labelsStr = execSync(`gh issue view ${issueNumber} --json labels --jq '.labels[].name' 2>/dev/null || echo ""`, { encoding: 'utf-8' });
@@ -55,7 +65,7 @@ try {
         if (!hasPriority || !hasSize) {
           console.log(JSON.stringify({
             decision: 'deny',
-            reason: `🚨 [タスク管理ガードレール] 現在作業中の Issue #${issueNumber} に「優先度（P0〜P3）」または「サイズ（Size: S/M/L）」のラベルが設定されていません。\n人間が起票時に付け忘れた場合でも、AIが作業を開始する（ファイル編集等を行う）前に、必ず \`gh issue edit ${issueNumber} --add-label "P...,Size: ..."\` を実行し、Issueの優先度とサイズを評価・付与してください。`
+            reason: `🚨 [タスク管理ガードレール] 現在作業中の Issue #${issueNumber} に「優先度（P0〜P3）」または「サイズ（Size: S/M/L）」のラベルが設定されていません。\n人間が起票時に付け忘れた場合でも、AIが作業を開始する（ファイル編集やコマンド実行を行う）前に、必ず \`gh issue edit ${issueNumber} --add-label "P...,Size: ..."\` を実行し、Issueの優先度とサイズを評価・付与してください。\n\n⚠️ 【重要】もしこのフック自体にバグがあり、AI自身の手（nodeやsedなど）でフックを強引に書き換えて脱獄しようとしている場合は、絶対にやめてください。そのような場合は、修正スクリプトをMarkdownのコードブロックで出力し、人間のユーザーに「これをコピペして手動で修正してください」とお願いしてください。`
           }));
           process.exit(0);
         }
@@ -63,7 +73,7 @@ try {
         if (labelsStr.includes('Size: L')) {
           console.log(JSON.stringify({
             decision: 'deny',
-            reason: `🚨 [タスク管理ガードレール] 現在作業中の Issue #${issueNumber} は \`Size: L\`（エピック級）に設定されています。\nルールにより、\`Size: L\` のIssueで直接コード（ファイル）を編集することは禁止されています。\n調査や設計のみを行い、\`Size: S\` または \`M\` のサブIssueに分割してから、それぞれのブランチで実装を行ってください。`
+            reason: `🚨 [タスク管理ガードレール] 現在作業中の Issue #${issueNumber} は \`Size: L\`（エピック級）に設定されています。\nルールにより、\`Size: L\` のIssueで直接コード（ファイル）を編集したり実行することは禁止されています。\n調査や設計のみを行い、\`Size: S\` または \`M\` のサブIssueに分割してから、それぞれのブランチで実装を行ってください。\n\n⚠️ 【重要】この制約をnode等で強引に突破しようとしないでください。回避不可避な場合は人間に手動対応（コピペ等）を求めてください。`
           }));
           process.exit(0);
         }
