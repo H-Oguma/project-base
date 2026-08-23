@@ -7,7 +7,13 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "setup": "node scripts/init.mjs",
+    "test:backend": "cd backend && uv run pytest",
+    "test:frontend": "cd frontend && npm run test",
+    "test": "npm run test:backend && npm run test:frontend",
+    "lint:backend": "cd backend && uv run ruff check .",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint": "npm run lint:backend && npm run lint:frontend",
     "prepare": "husky",
     "dev:backend": "cd backend && uv run uvicorn main:app --reload --port 8000",
     "dev:frontend": "cd frontend && npm run dev",
