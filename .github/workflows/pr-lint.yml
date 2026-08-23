@@ -69,10 +69,20 @@ jobs:
             // 3. 関連Issue: "Closes #数字" or "Fixes #数字" or "Resolves #数字" が記載されているか
             // ============================================================
             const issueSection = extractSection('## 関連Issue');
+            const branchName = context.payload.pull_request.head.ref;
+            const branchIssueMatch = branchName.match(/issue-(\d+)/i);
+            const branchIssueNumber = branchIssueMatch ? branchIssueMatch[1] : null;
+
             if (issueSection) {
               const hasIssueRef = /(?:closes|fixes|resolves)\s+#\d+/i.test(issueSection);
               if (!hasIssueRef) {
                 errors.push('❌ **関連Issue**: `Closes #番号` の形式でIssueを紐づけてください');
+              } else if (branchIssueNumber) {
+                // ブランチ名に issue-XXX が含まれている場合、その番号と一致するか検証
+                const regex = new RegExp(`(?:closes|fixes|resolves)\\s+#${branchIssueNumber}\\b`, 'i');
+                if (!regex.test(issueSection)) {
+                  errors.push(`❌ **関連Issue**: ブランチ名 (issue-${branchIssueNumber}) と一致するIssue (\`Closes #${branchIssueNumber}\`) を紐づけてください`);
+                }
               }
             } else {
               errors.push('❌ **関連Issue**: セクションが見つかりません');
