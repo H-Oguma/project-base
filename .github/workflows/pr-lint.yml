@@ -122,11 +122,15 @@ jobs:
                 errors.push('❌ **品質・ドキュメント**: すべてのチェックボックスを確認してください（該当しない場合はN/A等としてチェックを入れてください）');
               }
               
-              // N/A が含まれている場合、理由が書かれているかチェック
-              if (qualitySection.includes('N/A')) {
-                const reasonMatch = qualitySection.match(/※ N\/Aの理由:\s*(.*)/);
-                if (!reasonMatch || reasonMatch[1].trim().length === 0) {
-                  errors.push('❌ **品質・ドキュメント**: N/A（不要）とした項目がある場合は、その理由（※ N/Aの理由:）を記載してください');
+              // N/A理由のチェック
+              const lines = qualitySection.split('\n');
+              for (let i = 0; i < lines.length; i++) {
+                if (lines[i].match(/- \[\s*(N\/A|n\/a|-)\s*\]/i) || (lines[i].includes('- [x]') && lines[i].toLowerCase().includes('n/a', 6))) {
+                  const nextLine = lines[i+1] || '';
+                  if (nextLine.includes('N/Aの理由:') && nextLine.split('N/Aの理由:')[1].trim().length === 0) {
+                    let type = lines[i].includes('ドキュメント') ? 'ドキュメント更新' : 'テスト(TDD)';
+                    errors.push(`❌ **品質・ドキュメント**: ${type} を N/A とした理由を記載してください`);
+                  }
                 }
               }
             } else {
