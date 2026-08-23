@@ -15,7 +15,37 @@ try {
     console.log(JSON.stringify({ decision: 'allow' }));
     process.exit(0);
   }
-  
+
+  // --- 環境保護ガードレール (全ブランチ共通) ---
+  if (toolName === 'run_command') {
+    const commandLine = data.toolCall?.args?.CommandLine || '';
+    
+    if (/(^|\s)pip\s+(install|uninstall|freeze|list)\b/.test(commandLine)) {
+      console.log(JSON.stringify({
+        decision: 'deny',
+        reason: '🚨 [環境保護] pip コマンドの直接実行はグローバル環境を汚染する恐れがあるため禁止されています。\nパッケージの追加・削除には必ず `uv add <package>` や `uv remove <package>` などの `uv` コマンドを使用してください。'
+      }));
+      process.exit(0);
+    }
+    
+    if (/(^|&&|\|\||;|\s)python(3)?\s/.test(commandLine) && !commandLine.includes('uv run')) {
+      console.log(JSON.stringify({
+        decision: 'deny',
+        reason: '🚨 [環境保護] python コマンドの直接実行は仮想環境外での誤実行を防ぐため禁止されています。\nスクリプトを実行する場合は必ず `uv run python <script>` や `uv run <command>` の形式を使用してください。'
+      }));
+      process.exit(0);
+    }
+
+    if (/(^|\s)npm\s+(i|install)\s+-g\b/.test(commandLine) || /(^|\s)yarn\s+global\s+add\b/.test(commandLine)) {
+      console.log(JSON.stringify({
+        decision: 'deny',
+        reason: '🚨 [環境保護] npm パッケージのグローバルインストール (-g) は環境汚染を防ぐため禁止されています。\nローカルプロジェクト内にインストールしてください。'
+      }));
+      process.exit(0);
+    }
+  }
+  // ------------------------------------------
+
   let branch = '';
   try {
     branch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
