@@ -37,6 +37,31 @@ try {
       // ignore git errors
     }
   }
+
+  // --- 子Issueの親Issue紐付けガードレール (Issue作成時) ---
+  if (toolName === 'call_mcp_tool' && data.toolCall?.args?.ToolName === 'create_issue') {
+    try {
+      const branch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
+      const branchIssueMatch = branch.match(/issue-(\d+)/i);
+      
+      if (branchIssueMatch) {
+        const parentIssueNumber = branchIssueMatch[1];
+        const issueBody = data.toolCall?.args?.body || '';
+        
+        // 本文に親Issue番号が含まれているかチェック
+        const regex = new RegExp(`#${parentIssueNumber}\\b`);
+        if (!regex.test(issueBody)) {
+          console.log(JSON.stringify({
+            decision: 'deny',
+            reason: `🚨 [トレーサビリティ違反] 現在のブランチ (issue-${parentIssueNumber}) からサブIssueを作成しようとしていますが、本文に親Issue番号 (#${parentIssueNumber}) へのリンクが含まれていません。\n孤立したIssue (Orphan Issue) の発生を防ぐため、本文に「親Issue: #${parentIssueNumber}」のように必ずリンクを記載してください。`
+          }));
+          process.exit(0);
+        }
+      }
+    } catch (e) {
+      // ignore git errors
+    }
+  }
   // ------------------------------------------
 
   // --- 環境保護ガードレール (全ブランチ共通) ---
@@ -146,7 +171,25 @@ try {
     if (/^\s*git\s+(status|log|branch|diff|show|rev-parse|remote)\b/.test(commandLine)) allowed = true;
     
     // Allowed gh commands
-    if (/^\s*gh\s+issue\s+(create|list|view)\b/.test(commandLine)) allowed = true;
+    if (/^\s*gh\s+issue\s+(create|list|view)\b/.test(commandLine)) {
+      if (/^\s*gh\s+issue\s+create\b/.test(commandLine)) {
+        // コマンドラインまたはファイル入力などから本文を取得するのは難しいが、
+        // 少なくとも --body 引数に親Issue番号が含まれているかを簡易チェックする
+        const branchIssueMatch = branch.match(/issue-(\d+)/i);
+        if (branchIssueMatch && commandLine.includes('--body')) {
+          const parentIssueNumber = branchIssueMatch[1];
+          const regex = new RegExp(`#${parentIssueNumber}\\b`);
+          if (!regex.test(commandLine)) {
+            console.log(JSON.stringify({
+              decision: 'deny',
+              reason: `🚨 [トレーサビリティ違反] 現在のブランチ (issue-${parentIssueNumber}) からサブIssueをCLIで作成しようとしていますが、--body 内に親Issue番号 (#${parentIssueNumber}) へのリンクが見当たりません。\n孤立したIssueの発生を防ぐため、親Issueへのリンクを記載してください。`
+            }));
+            process.exit(0);
+          }
+        }
+      }
+      allowed = true;
+    }
     if (/^\s*gh\s+pr\s+(list|view|status)\b/.test(commandLine)) allowed = true;
     if (/^\s*gh\s+repo\s+view\b/.test(commandLine)) allowed = true;
     
