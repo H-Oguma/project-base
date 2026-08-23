@@ -79,6 +79,29 @@ try {
   }
   
   if (branch !== 'main' && branch !== 'master') {
+    // ブランチ名に issue-番号 が含まれていない場合は作業をブロック
+    if (!/issue-\d+/.test(branch)) {
+      if (['write_to_file', 'replace_file_content', 'multi_replace_file_content'].includes(toolName)) {
+        console.log(JSON.stringify({
+          decision: 'deny',
+          reason: '🚨 [トレーサビリティ違反] 現在のブランチ名（' + branch + '）に Issue 番号が含まれていません。\nプロジェクトのルールにより、ファイル編集前に必ず `issue-<番号>` を含むブランチ名に変更してください（例: `git branch -m feature/issue-123-xxx`）。'
+        }));
+        process.exit(0);
+      }
+      
+      if (toolName === 'run_command') {
+        const commandLine = data.toolCall?.args?.CommandLine || '';
+        // git branch -m などのリネーム操作や、ブランチ移動操作は許可する
+        if (!/^\s*git\s+(branch|checkout|switch|status|log)/.test(commandLine)) {
+          console.log(JSON.stringify({
+            decision: 'deny',
+            reason: '🚨 [トレーサビリティ違反] 現在のブランチ名（' + branch + '）に Issue 番号が含まれていません。\nプロジェクトのルールにより、ブランチ名に `issue-<番号>` が含まれていない状態での作業コマンド実行はブロックされます。'
+          }));
+          process.exit(0);
+        }
+      }
+    }
+
     console.log(JSON.stringify({ decision: 'allow' }));
     process.exit(0);
   }
@@ -108,7 +131,17 @@ try {
     let allowed = false;
     
     // Allowed Git workflow commands
-    if (/^\s*git\s+(checkout\s+-b|switch\s+-c|branch\s)/.test(commandLine)) allowed = true;
+    if (/^\s*git\s+(checkout\s+-b|switch\s+-c|branch\s)/.test(commandLine)) {
+      // ブランチ名に issue-番号 が含まれているかチェック
+      if (!/issue-\d+/.test(commandLine)) {
+        console.log(JSON.stringify({
+          decision: 'deny',
+          reason: '🚨 [トレーサビリティ違反] 新規ブランチ名には必ず Issue 番号を含める必要があります（例: `git checkout -b feature/issue-123-xxx`）。\n先に `gh issue create` で Issue を起票し、発行された番号を使ってブランチを作成してください。'
+        }));
+        process.exit(0);
+      }
+      allowed = true;
+    }
     if (/^\s*git\s+(pull|fetch)\b/.test(commandLine)) allowed = true;
     if (/^\s*git\s+(status|log|branch|diff|show|rev-parse|remote)\b/.test(commandLine)) allowed = true;
     
