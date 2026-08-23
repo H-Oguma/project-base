@@ -16,6 +16,29 @@ try {
     process.exit(0);
   }
 
+  // --- TDD & Docs ガードレール (PR作成時) ---
+  if (toolName === 'call_mcp_tool' && data.toolCall?.args?.ToolName === 'create_pull_request') {
+    try {
+      const diff = execSync('git diff main --name-only', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] });
+      
+      const hasCodeChanges = /(src\/|backend\/|frontend\/)/.test(diff) && !/(docs\/|README)/.test(diff);
+      const hasTestChanges = /(test|spec)/i.test(diff);
+      const hasDocsChanges = /(docs\/|README)/.test(diff);
+      
+      // プロダクトコードが変更されているのに、テストもドキュメントも変更されていない場合
+      if (hasCodeChanges && !hasTestChanges && !hasDocsChanges) {
+        console.log(JSON.stringify({
+          decision: 'deny',
+          reason: '🚨 [品質ガードレール] プロダクトコードが変更されていますが、テストコードとドキュメントの更新が含まれていません。\nTDD（テスト駆動開発）およびドキュメント更新のルールに違反していませんか？\n本当に不要な場合は、PR本文に不要な理由を明記するか、ダミーのコミット等で回避してください。'
+        }));
+        process.exit(0);
+      }
+    } catch (e) {
+      // ignore git errors
+    }
+  }
+  // ------------------------------------------
+
   // --- 環境保護ガードレール (全ブランチ共通) ---
   if (toolName === 'run_command') {
     const commandLine = data.toolCall?.args?.CommandLine || '';

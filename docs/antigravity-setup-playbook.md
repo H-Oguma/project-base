@@ -61,7 +61,7 @@ find . -type f | wc -l && find . -type f \( -path '*/.venv/*' -o -path '*/node_m
 
 ## 1. グローバルルール (Global Engineering Standard)
 - **言語**: 回答やコード内のコメント、コミットメッセージは原則として**日本語**を使用してください。
-- **環境**: ローカル環境での動作確認やコマンド実行は、原則として仮想環境や Docker を使用してください。
+- **環境**: ローカル環境での動作確認やコマンド実行は、原則として `uv` や Node.js のネイティブ環境を使用し、グローバル環境を汚染しないようにしてください。
 - **基本ワークフロー**: 実作業を始める前に Issue を起票し、必ず最新の `main` からブランチを切って作業を行うこと。
 
 ## 2. プロジェクト概要
@@ -82,10 +82,11 @@ find . -type f | wc -l && find . -type f \( -path '*/.venv/*' -o -path '*/node_m
 ## 4. 技術スタック
 - **Frontend**: React 19, Vite, Vitest, oxlint
 - **Backend**: FastAPI, SQLAlchemy, pytest, ruff
-- **Infrastructure**: Docker, Docker Compose
+- **Infrastructure**: Node.js (npm scripts) & uv
 
 ## 5. 開発の進め方 (AIエージェント向け絶対遵守ルール)
 - ユーザーから指示を受けたら、必ず `task-init` スキルを実行し GitHub Issue を起票し、ブランチを切ること。
+  - **※このルールは `.agents/hooks.json` と `enforce_workflow.mjs` によって機械的に強制（mainブランチでの直接編集・コマンド実行をブロック）されています。**
 - 現在のブランチに直接ファイル編集を行うことは固く禁じる。
 - PR作成前に、必ずコードレビュー用のサブエージェント（`reviewer`）を呼び出して品質や妥当性をレビューさせること。
 - その他の詳細なルールは `.agents/rules/` ディレクトリ以下のファイルを参照すること。

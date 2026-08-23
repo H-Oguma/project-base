@@ -1,4 +1,4 @@
 module.exports = {
-  "frontend/**/*.{js,jsx,ts,tsx}": () => "make lint-frontend",
-  "backend/**/*.py": () => "make lint-backend"
+  "frontend/**/*.{js,jsx,ts,tsx}": () => "npm run lint:frontend",
+  "backend/**/*.py": () => "npm run lint:backend"
 };

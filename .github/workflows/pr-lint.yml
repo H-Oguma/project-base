@@ -113,6 +113,31 @@ jobs:
             }
 
             // ============================================================
+            // 6. 品質・ドキュメント更新チェック
+            // ============================================================
+            const qualitySection = extractSection('## 品質・ドキュメント');
+            if (qualitySection) {
+              const hasUnchecked = qualitySection.includes('- [ ]');
+              if (hasUnchecked) {
+                errors.push('❌ **品質・ドキュメント**: すべてのチェックボックスを確認してください（該当しない場合はN/A等としてチェックを入れてください）');
+              }
+              
+              // N/A理由のチェック
+              const lines = qualitySection.split('\n');
+              for (let i = 0; i < lines.length; i++) {
+                if (lines[i].match(/- \[\s*(N\/A|n\/a|-)\s*\]/i) || (lines[i].includes('- [x]') && lines[i].toLowerCase().includes('n/a', 6))) {
+                  const nextLine = lines[i+1] || '';
+                  if (nextLine.includes('N/Aの理由:') && nextLine.split('N/Aの理由:')[1].trim().length === 0) {
+                    let type = lines[i].includes('ドキュメント') ? 'ドキュメント更新' : 'テスト(TDD)';
+                    errors.push(`❌ **品質・ドキュメント**: ${type} を N/A とした理由を記載してください`);
+                  }
+                }
+              }
+            } else {
+              errors.push('❌ **品質・ドキュメント**: セクションが見つかりません');
+            }
+
+            // ============================================================
             // 結果の出力
             // ============================================================
             if (errors.length > 0) {
@@ -153,8 +178,8 @@ jobs:
                 });
               }
 
-              // warning として出力（マージはブロックしない）
-              core.warning('PR本文のフォーマットに不足があります。PRコメントを確認してください。');
+              // エラーとして出力し、マージをブロックする
+              core.setFailed('PR本文のフォーマットに不足があります。PRコメントを確認して修正してください。');
             } else {
               // チェック通過時は既存のボットコメントを削除
               const { data: comments } = await github.rest.issues.listComments({

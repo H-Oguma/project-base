@@ -23,10 +23,10 @@ run_check() {
   "$@" >>"$log" 2>&1
 }
 
-# Makefile に定義された lint と test のコマンドを実行する
+# package.json に定義された lint と test のコマンドを実行する
 failed=""
-run_check "lint" make lint || failed="lint"
-[ -n "$failed" ] || run_check "test" make test-all || failed="${failed:-test}"
+run_check "lint" npm run lint || failed="lint"
+[ -n "$failed" ] || run_check "test" npm run test || failed="${failed:-test}"
 
 if [ -n "$failed" ]; then
   {

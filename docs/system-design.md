@@ -8,7 +8,7 @@
 * **フロントエンド**: React + Vite (Port: 5173)
 * **バックエンド**: Python FastAPI (Port: 8000)
 * **データベース**: SQLite + SQLAlchemy ORM
-* **インフラ**: Docker Composeによるコンテナ化環境
+* **インフラ**: `uv` および `npm` (concurrently) によるローカルネイティブ実行
 
 ---
 
