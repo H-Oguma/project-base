@@ -1,5 +1,7 @@
 # AI-Driven Development Base Project
 
+> Last Updated: 2026-08-24
+
 このリポジトリは、**AI駆動開発（AI-Driven Development）**をスムーズに行うためのベースプロジェクト（テンプレート）です。
 Cursor、Windsurf、GitHub Copilot、Cline などのAIアシスタントと協働することを前提とした設定が組み込まれています。
 
@@ -10,7 +12,7 @@ Cursor、Windsurf、GitHub Copilot、Cline などのAIアシスタントと協�
 ## 🌟 特徴
 
 - **AIコンテキスト (`AGENTS.md`)**: AIがプロジェクトの全体像を即座に把握するためのメタドキュメント。
-- **AIツール仕様 (`docs/antigravity-2.0-specs.md`)**: エージェント（Antigravity 2.0等）の操作や設定に関する仕様ドキュメント。
+- **AIツール仕様 (`docs/architecture/antigravity-2.0-specs.md`)**: エージェント（Antigravity 2.0等）の操作や設定に関する仕様ドキュメント。
 - **グローバルルール (`.cursorrules`)**: AIエージェントに一貫した振る舞い（テスト駆動、日本語回答など）を強制。
 - **CI/CDパイプライン**: 自動テスト・自動Lintの整備により、AIが生成したコードの品質を担保。
 - **統一されたタスクランナー (`package.json`)**: AIが迷わずテストやLintを実行できるエントリーポイント。
@@ -36,6 +38,9 @@ Cursor、Windsurf、GitHub Copilot、Cline などのAIアシスタントと協�
 │   ├── public/       # 静的ファイル
 │   └── package.json  # フロントエンドの依存関係とスクリプト
 ├── docs/             # 各種ドキュメント（詳細は docs/README.md を参照）
+│   ├── architecture/ # システム・AIアーキテクチャ設計
+│   ├── setup/        # 環境構築・リポジトリ設定
+│   └── troubleshooting/# トラブル解決・Hooks関連
 ├── scripts/          # プロジェクト全体のセットアップ等のユーティリティスクリプト
 ├── docker-compose.yml# 本番ビルドなどの動作確認用（ローカル開発は uv/npm で直接実行）
 ├── package.json      # タスクランナー (setup, lint, test, dev などの共通コマンド)
@@ -50,8 +55,8 @@ Cursor、Windsurf、GitHub Copilot、Cline などのAIアシスタントと協�
 | 読者 | おすすめの入り口 |
 |---|---|
 | **初めてこのリポジトリを見る方** | 本 README を一読した後、[ドキュメント一覧 (`docs/README.md`)](docs/README.md) へ |
-| **テンプレートとして使い始めたい方** | 下記の「🚀 使い方」セクション → [セットアップ Playbook (`docs/antigravity-setup-playbook.md`)](docs/antigravity-setup-playbook.md) |
-| **設計や技術的な判断の経緯を知りたい方** | [システム設計書 (`docs/system-design.md`)](docs/system-design.md) → [AIアーキテクチャ設計書 (`docs/ai-architecture.md`)](docs/ai-architecture.md) |
+| **テンプレートとして使い始めたい方** | 下記の「🚀 使い方」セクション → [セットアップ Playbook (`docs/setup/antigravity-setup-playbook.md`)](docs/setup/antigravity-setup-playbook.md) |
+| **設計や技術的な判断の経緯を知りたい方** | [システム設計書 (`docs/architecture/system-design.md`)](docs/architecture/system-design.md) → [AIアーキテクチャ設計書 (`docs/architecture/ai-architecture.md`)](docs/architecture/ai-architecture.md) |
 
 ## 🚀 使い方
 

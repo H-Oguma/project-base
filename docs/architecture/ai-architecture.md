@@ -1,5 +1,7 @@
 # AI Architecture & Workflow Design
 
+> Last Updated: 2026-08-24
+
 本プロジェクトは、AIアシスタント（Antigravity, Cursor 等）との協働を前提とした「AI駆動開発（AI-Driven Development）」のためのベースアーキテクチャを採用しています。
 
 このドキュメントでは、AIを効率的かつ安全に活用するためのシステム設計や設定について記録します。

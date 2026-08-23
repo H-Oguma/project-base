@@ -1,5 +1,7 @@
 # AI Context & Global Rules
 
+> Last Updated: 2026-08-24
+
 このドキュメントは、AIアシスタント（Antigravity, Cursor, Windsurf, Cline 等）が本プロジェクトの全体像とルールを把握するためのメタドキュメント（グローバルルール）です。
 
 ## 1. グローバルルール (Global Engineering Standard)
@@ -68,7 +70,7 @@ AIは作業に着手する際、いかなるコード変更・コマンド実行
 7. **詳細ルールの参照**: 
    - 開発フロー、TDD、セキュリティ、設計書更新などの詳細ルールは `.agents/rules/` ディレクトリ以下のファイルで定義されています。
    - 常にこれらの詳細ルールを遵守してください。
-   - AIがワークフローを無視してしまう問題とその対策（Hooks設定）については、[`docs/ai-workflow-troubleshooting.md`](file:///Users/kumato/Documents/hoby/project-base/docs/ai-workflow-troubleshooting.md) を参照してください。
+   - AIがワークフローを無視してしまう問題とその対策（Hooks設定）については、[`docs/troubleshooting/ai-workflow-troubleshooting.md`](docs/troubleshooting/ai-workflow-troubleshooting.md) を参照してください。
 
 ## 6. MCP (Model Context Protocol) 運用ガイドライン
 AIエージェントの能力を拡張する MCP サーバーの設定は、セキュリティを考慮して以下のように管理してください。
