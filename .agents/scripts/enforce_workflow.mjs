@@ -39,7 +39,7 @@ try {
   }
   // ------------------------------------------
 
-  // --- タスクサイズ ガードレール (ファイル編集時) ---
+  // --- タスクサイズ・管理 ガードレール (ファイル編集時) ---
   if (['write_to_file', 'replace_file_content', 'multi_replace_file_content'].includes(toolName)) {
     try {
       const branch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
@@ -48,6 +48,18 @@ try {
         const issueNumber = match[1];
         // Issueのラベルを取得
         const labelsStr = execSync(`gh issue view ${issueNumber} --json labels --jq '.[].name' 2>/dev/null || echo ""`, { encoding: 'utf-8' });
+        
+        const hasPriority = /(P0|P1|P2|P3)/.test(labelsStr);
+        const hasSize = /Size:\s*[SML]/.test(labelsStr);
+        
+        if (!hasPriority || !hasSize) {
+          console.log(JSON.stringify({
+            decision: 'deny',
+            reason: `🚨 [タスク管理ガードレール] 現在作業中の Issue #${issueNumber} に「優先度（P0〜P3）」または「サイズ（Size: S/M/L）」のラベルが設定されていません。\n人間が起票時に付け忘れた場合でも、AIが作業を開始する（ファイル編集等を行う）前に、必ず \`gh issue edit ${issueNumber} --add-label "P...,Size: ..."\` を実行し、Issueの優先度とサイズを評価・付与してください。`
+          }));
+          process.exit(0);
+        }
+
         if (labelsStr.includes('Size: L')) {
           console.log(JSON.stringify({
             decision: 'deny',
