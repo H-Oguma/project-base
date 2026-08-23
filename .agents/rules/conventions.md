@@ -28,6 +28,6 @@
 - フォーマット: `<type>(<scope>): <要約> (#<番号>)`
 
 ## E. lint / test コマンド
-プロジェクトルートにある `Makefile` を通じて実行すること。
-- lint: `make lint` （チェックのみ。formatは行わない）
-- test: `make test-all`
+プロジェクトルートにある `package.json` を通じて実行すること。
+- lint: `npm run lint` （チェックのみ。formatは行わない）
+- test: `npm run test`
