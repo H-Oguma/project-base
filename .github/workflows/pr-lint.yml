@@ -125,7 +125,8 @@ jobs:
               // N/A理由のチェック
               const lines = qualitySection.split('\n');
               for (let i = 0; i < lines.length; i++) {
-                if (lines[i].match(/- \[\s*(N\/A|n\/a|-)\s*\]/i) || (lines[i].includes('- [x]') && lines[i].toLowerCase().includes('n/a', 6))) {
+                // チェックボックスの中身が N/A, n/a, または - の場合のみ理由を必須とする
+                if (lines[i].match(/- \[\s*(N\/A|n\/a|-)\s*\]/i)) {
                   const nextLine = lines[i+1] || '';
                   if (nextLine.includes('N/Aの理由:') && nextLine.split('N/Aの理由:')[1].trim().length === 0) {
                     let type = lines[i].includes('ドキュメント') ? 'ドキュメント更新' : 'テスト(TDD)';
