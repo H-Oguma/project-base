@@ -14,21 +14,21 @@ setup:
 test-all: test-backend test-frontend
 
 test-backend:
-	docker compose run --rm backend pytest
+	cd backend && uv run pytest
 
 test-frontend:
-	docker compose run --rm frontend npm run test
+	cd frontend && npm run test
 
 lint: lint-backend lint-frontend
 
 lint-backend:
-	docker compose run --rm backend ruff check .
+	cd backend && uv run ruff check .
 
 lint-frontend:
-	docker compose run --rm frontend npm run lint
+	cd frontend && npm run lint
 
 up:
-	docker compose up -d
+	npm run dev
 
 down:
-	docker compose down
+	@echo "ローカル直接実行環境（脱Docker）に移行したため、make down は不要です。起動中のターミナルで Ctrl+C を押して終了してください。"
