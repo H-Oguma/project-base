@@ -7,10 +7,10 @@ try {
     console.log(JSON.stringify({ decision: 'allow' }));
     process.exit(0);
   }
-  
+
   const data = JSON.parse(input);
   const toolName = data.toolCall?.name;
-  
+
   if (!toolName) {
     console.log(JSON.stringify({ decision: 'allow' }));
     process.exit(0);
@@ -20,11 +20,11 @@ try {
   if (toolName === 'call_mcp_tool' && data.toolCall?.args?.ToolName === 'create_pull_request') {
     try {
       const diff = execSync('git diff main --name-only', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] });
-      
+
       const hasCodeChanges = /(src\/|backend\/|frontend\/)/.test(diff) && !/(docs\/|README)/.test(diff);
       const hasTestChanges = /(test|spec)/i.test(diff);
       const hasDocsChanges = /(docs\/|README)/.test(diff);
-      
+
       // プロダクトコードが変更されているのに、テストもドキュメントも変更されていない場合
       if (hasCodeChanges && !hasTestChanges && !hasDocsChanges) {
         console.log(JSON.stringify({
@@ -43,11 +43,11 @@ try {
     try {
       const branch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
       const branchIssueMatch = branch.match(/issue-(\d+)/i);
-      
+
       if (branchIssueMatch) {
         const parentIssueNumber = branchIssueMatch[1];
         const issueBody = data.toolCall?.args?.body || '';
-        
+
         // 本文に親Issue番号が含まれているかチェック
         const regex = new RegExp(`#${parentIssueNumber}\\b`);
         if (!regex.test(issueBody)) {
@@ -77,7 +77,7 @@ try {
     try {
       const branch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
       const match = branch.match(/issue-(\d+)/i);
-      
+
       // run_commandの場合、ghやgitなどラベル修正や状況確認に必要なコマンドは許可する
       let isSafeCommand = false;
       if (toolName === 'run_command') {
@@ -92,10 +92,10 @@ try {
         const issueNumber = match[1];
         // Issueのラベルを取得
         const labelsStr = execSync(`gh issue view ${issueNumber} --json labels --jq '.labels[].name' 2>/dev/null || echo ""`, { encoding: 'utf-8' });
-        
+
         const hasPriority = /(P0|P1|P2|P3)/.test(labelsStr);
         const hasSize = /Size:\s*[SML]/.test(labelsStr);
-        
+
         if (!hasPriority || !hasSize) {
           console.log(JSON.stringify({
             decision: 'deny',
@@ -123,7 +123,7 @@ try {
     const labels = data.toolCall?.args?.labels || [];
     const hasPriority = labels.some(l => l.startsWith('P0') || l.startsWith('P1') || l.startsWith('P2') || l.startsWith('P3'));
     const hasSize = labels.some(l => l.startsWith('Size:'));
-    
+
     if (!hasPriority || !hasSize) {
       console.log(JSON.stringify({
         decision: 'deny',
@@ -137,7 +137,7 @@ try {
   // --- 環境保護ガードレール (全ブランチ共通) ---
   if (toolName === 'run_command') {
     const commandLine = data.toolCall?.args?.CommandLine || '';
-    
+
     if (/(^|\s)pip\s+(install|uninstall|freeze|list)\b/.test(commandLine)) {
       console.log(JSON.stringify({
         decision: 'deny',
@@ -145,7 +145,7 @@ try {
       }));
       process.exit(0);
     }
-    
+
     if (/(^|&&|\|\||;|\s)python(3)?\s/.test(commandLine) && !commandLine.includes('uv run')) {
       console.log(JSON.stringify({
         decision: 'deny',
@@ -172,7 +172,7 @@ try {
     console.log(JSON.stringify({ decision: 'allow' }));
     process.exit(0);
   }
-  
+
   if (branch !== 'main' && branch !== 'master') {
     // ブランチ名に issue-番号 が含まれていない場合は作業をブロック
     if (!/issue-\d+/.test(branch)) {
@@ -183,7 +183,7 @@ try {
         }));
         process.exit(0);
       }
-      
+
       if (toolName === 'run_command') {
         const commandLine = data.toolCall?.args?.CommandLine || '';
         // git branch -m などのリネーム操作や、ブランチ移動操作は許可する
@@ -200,7 +200,7 @@ try {
     console.log(JSON.stringify({ decision: 'allow' }));
     process.exit(0);
   }
-  
+
   if (['write_to_file', 'replace_file_content', 'multi_replace_file_content'].includes(toolName)) {
     console.error(`[WORKFLOW GUARD] ブランチ '${branch}' でのファイル編集をブロックしました`);
     console.log(JSON.stringify({
@@ -209,10 +209,10 @@ try {
     }));
     process.exit(0);
   }
-  
+
   if (toolName === 'run_command') {
     const commandLine = data.toolCall?.args?.CommandLine || '';
-    
+
     // Check for command chains
     if (/[;|`]|&&|\$\(/.test(commandLine)) {
       console.error(`[WORKFLOW GUARD] コマンドチェーンを検出してブロックしました: ${commandLine}`);
@@ -222,9 +222,9 @@ try {
       }));
       process.exit(0);
     }
-    
+
     let allowed = false;
-    
+
     // Allowed Git workflow commands
     if (/^\s*git\s+(checkout\s+-b|switch\s+-c|branch\s)/.test(commandLine)) {
       // ブランチ名に issue-番号 が含まれているかチェック
@@ -239,7 +239,7 @@ try {
     }
     if (/^\s*git\s+(pull|fetch)\b/.test(commandLine)) allowed = true;
     if (/^\s*git\s+(status|log|branch|diff|show|rev-parse|remote)\b/.test(commandLine)) allowed = true;
-    
+
     // Allowed gh commands
     if (/^\s*gh\s+issue\s+(create|list|view)\b/.test(commandLine)) {
       if (/^\s*gh\s+issue\s+create\b/.test(commandLine)) {
@@ -251,6 +251,7 @@ try {
             reason: '🚨 [タスク管理ガードレール] CLIからIssueを起票する際は、必ず優先度とサイズのラベルを指定してください。\n例: `gh issue create --label "P2: Normal,Size: S"`'
           }));
           process.exit(0);
+        }
         // コマンドラインまたはファイル入力などから本文を取得するのは難しいが、
         // 少なくとも --body 引数に親Issue番号が含まれているかを簡易チェックする
         const branchIssueMatch = branch.match(/issue-(\d+)/i);
@@ -270,12 +271,12 @@ try {
     }
     if (/^\s*gh\s+pr\s+(list|view|status)\b/.test(commandLine)) allowed = true;
     if (/^\s*gh\s+repo\s+view\b/.test(commandLine)) allowed = true;
-    
+
     if (allowed) {
       console.log(JSON.stringify({ decision: 'allow' }));
       process.exit(0);
     }
-    
+
     console.error(`[WORKFLOW GUARD] ブランチ '${branch}' でのコマンド実行をブロックしました: ${commandLine}`);
     console.log(JSON.stringify({
       decision: 'deny',
@@ -283,7 +284,7 @@ try {
     }));
     process.exit(0);
   }
-  
+
   console.log(JSON.stringify({ decision: 'allow' }));
 } catch (e) {
   console.log(JSON.stringify({ decision: 'allow' }));
