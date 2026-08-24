@@ -1,8 +1,7 @@
 # 注意: このプロジェクトは開発環境において完全ローカル実行（脱Docker）に移行しました。
-# 開発時は `npm run dev`（または `make up`）を使用して起動してください。
+# 開発時は `npm run dev` 等を使用して起動してください。
 # このファイルは、本番環境向けのコンテナビルド動作確認などの特殊な用途にのみ使用します。
 
-version: '3.8'
 services:
   backend:
     build:
@@ -10,21 +9,13 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend:/app
     environment:
       - PYTHONUNBUFFERED=1
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    environment:
-      - WATCHPACK_POLLING=true
-    command: npm run dev
+      # Nginxが非root環境で8080ポートでリッスンしているため
+      - "5173:8080"
