@@ -1,5 +1,6 @@
 # Python
 venv/
+.venv/
 __pycache__/
 *.pyc
 *.pyo
@@ -7,6 +8,14 @@ __pycache__/
 .env
 *.db
 *.sqlite3
+
+# Python ツールキャッシュ
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage/
+htmlcov/
 
 # Node.js
 node_modules/
@@ -18,5 +27,12 @@ build/
 .DS_Store
 Thumbs.db
 
-# Project
+# エディタ・IDE
+.vscode/
+.idea/
+
+# ログ
+*.log
+
+# プロジェクト
 /tmp/
