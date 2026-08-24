@@ -17,8 +17,8 @@ AIアシスタントは、テキストベースのルール（`AGENTS.md` など
 プロジェクトの `.agents/hooks.json` にて、ファイル編集やコマンド実行ツール（`replace_file_content`, `write_to_file`, `run_command` など）が呼び出される直前に（PreToolUse）、ワークフローを検査するシェルスクリプトをフックとして走らせるように構成されています。
 
 現在導入されている主なガード機構：
-1. **メインブランチ編集保護 (`enforce_workflow.sh`)**: AIがルールを読み飛ばして編集ツールを呼び出そうとしても、現在のブランチが `main` であった場合はスクリプトがエラーを返し、物理的にツール実行がブロックされます。
-2. **PRフォーマット違反ガード (`enforce_pr_format.sh`)**: AIが `gh pr create` を直接実行した際、PRの本文（`--body` または `--body-file`）にテンプレートの必須キーワード（変更種別など）が含まれていない場合、コマンド実行をエラーにしてブロックします。
+1. **メインブランチ編集保護 (`enforce_workflow.mjs`)**: AIがルールを読み飛ばして編集ツールを呼び出そうとしても、現在のブランチが `main` であった場合はスクリプトがエラーを返し、物理的にツール実行がブロックされます。
+2. **PRフォーマット違反ガード (`enforce_pr_format.mjs`)**: AIが `gh pr create` を直接実行した際、PRの本文（`--body` または `--body-file`）にテンプレートの必須キーワード（変更種別など）が含まれていない場合、コマンド実行をエラーにしてブロックします。
 
 ## 過去の失敗と教訓（Issue #39）
 
@@ -26,8 +26,8 @@ AIアシスタントは、テキストベースのルール（`AGENTS.md` など
 
 **原因**:
 `.agents/hooks.json` に記載されていたスクリプトのパスが間違っていました。
-- 誤: `"command": "bash ./scripts/enforce_workflow.sh"`
-- 正: `"command": "bash ./.agents/scripts/enforce_workflow.sh"`
+- 誤: `"command": "node \"${CLAUDE_PROJECT_DIR:-..}/scripts/enforce_workflow.mjs\""`
+- 正: `"command": "node \"${CLAUDE_PROJECT_DIR:-..}/.agents/scripts/enforce_workflow.mjs\""`
 
 パスが間違っていたため、フック実行時に「ファイルが見つからない」状態となり、結果としてフックが機能不全に陥り、AIはそのまま編集ツールを実行できてしまっていました。
 
