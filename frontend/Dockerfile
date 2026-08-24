@@ -20,10 +20,10 @@ RUN mkdir -p /var/cache/nginx /var/run /var/log/nginx && \
 # デフォルトの80番ポートを8080に変更（非rootユーザーは1024未満のポートをバインドできないため）
 RUN sed -i 's/listen  *80;/listen 8080;/g' /etc/nginx/conf.d/default.conf
 
-USER nginx
-
 # デフォルトの公開ディレクトリをクリーンアップ
 RUN rm -rf /usr/share/nginx/html/*
+
+USER nginx
 
 # ビルドした静的ファイルをコピー
 COPY --from=builder --chown=nginx:nginx /app/dist /usr/share/nginx/html
