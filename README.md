@@ -104,3 +104,7 @@ AIアシスタントに作業を依頼する際は、以下の点に留意して
 ## ⚠️ License
 
 MIT License (適宜変更してください)
+
+
+## Docker Environment
+本プロジェクトの Dockerfile は、マルチステージビルドおよび非rootユーザー環境（`appuser`, `nginx`）で構築されており、セキュアな本番運用を前提とした構成になっています。
