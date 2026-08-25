@@ -1,15 +1,21 @@
+from contextlib import asynccontextmanager
+
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
 import models
 from database import engine, get_db
 
-# Create DB tables
-models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Create DB tables
+    models.Base.metadata.create_all(bind=engine)
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 # CORS configuration (as per security rules, explicitly define origins in production)
 origins = [
@@ -33,8 +39,7 @@ class ItemResponse(BaseModel):
     title: str
     description: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 @app.get("/")
 def read_root():
