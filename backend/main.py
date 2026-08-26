@@ -23,7 +23,11 @@ app = FastAPI(lifespan=lifespan)
 
 # CORS設定（環境変数から読み込む）
 # (as per security rules, explicitly define origins in production)
-origins = settings.cors_origins.split(",") if settings.cors_origins else ["http://localhost:5173"]
+origins = (
+    settings.cors_origins.split(",")
+    if settings.cors_origins
+    else ["http://localhost:5173"]
+)
 
 app.add_middleware(
     CORSMiddleware,
