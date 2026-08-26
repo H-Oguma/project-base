@@ -21,3 +21,5 @@
   エージェントのアクティビティを起動・監視するためのデスクトップ Electron アプリケーション「Antigravity 2.0」のUI構成や権限設定に関する仕様書です。
 - **[GitHub リポジトリ推奨設定ガイド (github-repository-settings.md)](./setup/github-repository-settings.md)**
   プロジェクトの品質やセキュリティを保つために、ブラウザの Settings 画面から行うべき推奨設定（Rulesets や自動削除など）をまとめています。
+- **[MCP サーバー セットアップガイド (mcp-setup.md)](./setup/mcp-setup.md)**
+  AIエージェントの能力を拡張する MCP サーバー（GitHub MCP等）の導入手順と PAT 発行手順についてのガイドです。
