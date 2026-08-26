@@ -14,7 +14,7 @@ AIアシスタントは、テキストベースのルール（`AGENTS.md` など
 
 テキストによるお願い（プロンプト）ではなく、システム的な強制力を持つ仕組みとして、Antigravity（Geminiエージェント等）の **Hooks** 機能を活用します。
 
-プロジェクトの `.agents/hooks.json` にて、ファイル編集やコマンド実行ツール（`replace_file_content`, `write_to_file`, `run_command` など）が呼び出される直前に（PreToolUse）、ワークフローを検査するシェルスクリプトをフックとして走らせるように構成されています。
+プロジェクトの `.agents/hooks.json` にて、ファイル編集やコマンド実行ツール（`replace_file_content`, `write_to_file`, `run_command` など）が呼び出される直前に（PreToolUse）、ワークフローを検査するスクリプト（Node.js）をフックとして走らせるように構成されています。
 
 現在導入されている主なガード機構：
 1. **メインブランチ編集保護 (`enforce_workflow.mjs`)**: AIがルールを読み飛ばして編集ツールを呼び出そうとしても、現在のブランチが `main` であった場合はスクリプトがエラーを返し、物理的にツール実行がブロックされます。
