@@ -15,11 +15,12 @@ async def lifespan(app: FastAPI):
     models.Base.metadata.create_all(bind=engine)
     yield
 
+
 app = FastAPI(lifespan=lifespan)
 
 # CORS configuration (as per security rules, explicitly define origins in production)
 origins = [
-    "http://localhost:5173", # Vite dev server
+    "http://localhost:5173",  # Vite dev server
 ]
 
 app.add_middleware(
@@ -30,9 +31,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 class ItemCreate(BaseModel):
     title: str
     description: str
+
 
 class ItemResponse(BaseModel):
     id: int
@@ -41,9 +44,11 @@ class ItemResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 @app.get("/")
 def read_root():
     return {"message": "Welcome to FastAPI + React Setup!"}
+
 
 @app.post("/items/", response_model=ItemResponse)
 def create_item(item: ItemCreate, db: Session = Depends(get_db)):
@@ -52,6 +57,7 @@ def create_item(item: ItemCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_item)
     return db_item
+
 
 @app.get("/items/", response_model=list[ItemResponse])
 def read_items(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
