@@ -18,6 +18,18 @@ jobs:
     permissions:
       pull-requests: write
     steps:
+      - name: PRタイトルのフォーマットチェック
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = context.payload.pull_request.title || '';
+            const titleRegex = /^\[(Feature|Bugfix|Refactor|Docs|Chore)\]\s+.+/i;
+            if (!titleRegex.test(title)) {
+              core.setFailed(`PRタイトル「${title}」のフォーマットが不正です。"[種別] 変更の要約"（種別: Feature, Bugfix, Refactor, Docs, Chore）の形式にしてください（例: [Feature] ユーザー認証APIの追加）。`);
+            } else {
+              core.info(`✅ PRタイトルのフォーマットチェックに合格しました: ${title}`);
+            }
+
       - name: PR本文のフォーマットチェック
         uses: actions/github-script@v7
         with:
@@ -127,15 +139,24 @@ jobs:
             // ============================================================
             const qualitySection = extractSection('## 品質・ドキュメント');
             if (qualitySection) {
-              const hasUnchecked = qualitySection.includes('- [ ]');
-              if (hasUnchecked) {
-                errors.push('❌ **品質・ドキュメント**: すべてのチェックボックスを確認してください（該当しない場合はN/A等としてチェックを入れてください）');
+              // 各チェックボックス行を抽出し、個別に検証する
+              const checkboxLines = qualitySection.match(/^\s*- \[.*?\].*$/gm) || [];
+              for (const line of checkboxLines) {
+                // チェック済み: [x], [X]
+                // N/A: [N/A], [n/a], [-]
+                // 未チェック: [ ]
+                const isChecked = /- \[\s*[xX]\s*\]/.test(line);
+                const isNA = /- \[\s*(N\/A|n\/a|-)\s*\]/.test(line);
+                
+                if (!isChecked && !isNA) {
+                  errors.push('❌ **品質・ドキュメント**: すべてのチェックボックスを確認してください（該当しない場合は `- [N/A]` として理由を記載してください）');
+                  break; // 1つ見つかれば十分
+                }
               }
               
               // N/A理由のチェック
               const lines = qualitySection.split('\n');
               for (let i = 0; i < lines.length; i++) {
-                // チェックボックスの中身が N/A, n/a, または - の場合のみ理由を必須とする
                 if (lines[i].match(/- \[\s*(N\/A|n\/a|-)\s*\]/i)) {
                   const nextLine = lines[i+1] || '';
                   if (nextLine.includes('N/Aの理由:') && nextLine.split('N/Aの理由:')[1].trim().length === 0) {
