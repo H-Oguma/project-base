@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Dict, List
+from typing import AsyncGenerator
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,10 +18,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     models.Base.metadata.create_all(bind=engine)
     yield
 
+
 app = FastAPI(lifespan=lifespan)
 
 # CORS設定（環境変数から読み込む）
-origins = settings.cors_origins.split(",")
+# (as per security rules, explicitly define origins in production)
+origins = settings.cors_origins.split(",") if settings.cors_origins else ["http://localhost:5173"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -31,9 +33,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 class ItemCreate(BaseModel):
     title: str
     description: str
+
 
 class ItemResponse(BaseModel):
     id: int
@@ -42,9 +46,11 @@ class ItemResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 @app.get("/")
-def read_root() -> Dict[str, str]:
+def read_root() -> dict[str, str]:
     return {"message": "Welcome to FastAPI + React Setup!"}
+
 
 @app.post("/items/", response_model=ItemResponse)
 def create_item(item: ItemCreate, db: Session = Depends(get_db)) -> models.Item:
@@ -58,10 +64,11 @@ def create_item(item: ItemCreate, db: Session = Depends(get_db)) -> models.Item:
         raise HTTPException(status_code=500, detail="Database error occurred") from e
     return db_item
 
-@app.get("/items/", response_model=List[ItemResponse])
+
+@app.get("/items/", response_model=list[ItemResponse])
 def read_items(
     skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
-) -> List[models.Item]:
+) -> list[models.Item]:
     try:
         items = db.query(models.Item).offset(skip).limit(limit).all()
         return items
