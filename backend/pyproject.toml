@@ -8,6 +8,7 @@ dependencies = [
     "fastapi",
     "httpx",
     "pydantic",
+    "pydantic-settings>=2.15.0",
     "pytest",
     "ruff",
     "sqlalchemy",
