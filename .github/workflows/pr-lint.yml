@@ -18,6 +18,18 @@ jobs:
     permissions:
       pull-requests: write
     steps:
+      - name: PRタイトルのフォーマットチェック
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = context.payload.pull_request.title || '';
+            const titleRegex = /^\[(Feature|Bugfix|Refactor|Docs|Chore)\]\s+.+/i;
+            if (!titleRegex.test(title)) {
+              core.setFailed(`PRタイトル「${title}」のフォーマットが不正です。"[種別] 変更の要約"（種別: Feature, Bugfix, Refactor, Docs, Chore）の形式にしてください（例: [Feature] ユーザー認証APIの追加）。`);
+            } else {
+              core.info(`✅ PRタイトルのフォーマットチェックに合格しました: ${title}`);
+            }
+
       - name: PR本文のフォーマットチェック
         uses: actions/github-script@v7
         with:
