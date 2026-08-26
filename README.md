@@ -55,6 +55,7 @@ Cursor、Windsurf、GitHub Copilot、Cline などのAIアシスタントと協�
 | 読者 | おすすめの入り口 |
 |---|---|
 | **初めてこのリポジトリを見る方** | 本 README を一読した後、[ドキュメント一覧 (`docs/README.md`)](docs/README.md) へ |
+| **開発に参加・貢献したい方** | [開発・貢献ガイド (`CONTRIBUTING.md`)](CONTRIBUTING.md) |
 | **テンプレートとして使い始めたい方** | 下記の「🚀 使い方」セクション → [セットアップ Playbook (`docs/setup/antigravity-setup-playbook.md`)](docs/setup/antigravity-setup-playbook.md) |
 | **設計や技術的な判断の経緯を知りたい方** | [システム設計書 (`docs/architecture/system-design.md`)](docs/architecture/system-design.md) → [AIアーキテクチャ設計書 (`docs/architecture/ai-architecture.md`)](docs/architecture/ai-architecture.md) |
 
