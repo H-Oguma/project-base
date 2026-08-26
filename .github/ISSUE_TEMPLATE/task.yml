@@ -6,7 +6,19 @@ body:
   - type: markdown
     attributes:
       value: |
-        タスクの起票ありがとうございます。AIが適切に処理できるよう、優先度とサイズを指定してください。
+        タスクの起票ありがとうございます。AIが適切に処理できるよう、種別、優先度とサイズを指定してください。
+  - type: dropdown
+    id: task-type
+    attributes:
+      label: Type (種別)
+      description: タスクの種別を選択してください。
+      options:
+        - "Feature (新機能の追加)"
+        - "Refactor (リファクタリング・コード改善)"
+        - "Docs (ドキュメントの追加・修正)"
+        - "Chore (ビルド・CI・依存関係・設定等の保守作業)"
+    validations:
+      required: true
   - type: dropdown
     id: priority
     attributes:
