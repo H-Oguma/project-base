@@ -2,6 +2,7 @@
 
 APIエンドポイントのテストを行います。
 """
+
 from collections.abc import Generator
 
 import pytest
@@ -27,7 +28,7 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 @pytest.fixture(scope="function")
 def db_session() -> Generator[Session, None, None]:
     """テスト用のデータベースセッションを提供するフィクスチャ。
-    
+
     テストごとにテーブルを作成および破棄します。
     """
     models.Base.metadata.create_all(bind=engine)
@@ -42,9 +43,10 @@ def db_session() -> Generator[Session, None, None]:
 @pytest.fixture(scope="function")
 def client(db_session: Session) -> Generator[TestClient, None, None]:
     """テスト用のFastAPIクライアントを提供するフィクスチャ。
-    
+
     データベースの依存関係をテスト用のセッションでオーバーライドします。
     """
+
     def override_get_db() -> Generator[Session, None, None]:
         try:
             yield db_session
@@ -59,7 +61,7 @@ def client(db_session: Session) -> Generator[TestClient, None, None]:
 
 def test_read_root(client: TestClient) -> None:
     """ルートエンドポイントのテスト。
-    
+
     ウェルカムメッセージが正しく返却されることを確認します。
     """
     response = client.get("/")
@@ -69,7 +71,7 @@ def test_read_root(client: TestClient) -> None:
 
 def test_create_item(client: TestClient) -> None:
     """アイテム作成エンドポイントの正常系テスト。
-    
+
     新しいアイテムが正しく作成されることを確認します。
     """
     response = client.post(
@@ -84,7 +86,7 @@ def test_create_item(client: TestClient) -> None:
 
 def test_read_items(client: TestClient) -> None:
     """アイテム一覧取得エンドポイントの正常系テスト。
-    
+
     作成したアイテムが一覧に含まれていることを確認します。
     """
     client.post("/items/", json={"title": "Item 1", "description": "Desc 1"})
@@ -100,11 +102,8 @@ def test_read_items(client: TestClient) -> None:
 
 def test_create_item_validation_error(client: TestClient) -> None:
     """アイテム作成エンドポイントの異常系テスト。
-    
+
     必須項目が不足している場合に422エラーが返却されることを確認します。
     """
-    response = client.post(
-        "/items/",
-        json={"description": "Missing title"}
-    )
+    response = client.post("/items/", json={"description": "Missing title"})
     assert response.status_code == 422

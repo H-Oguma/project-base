@@ -20,7 +20,7 @@ from database import engine, get_db
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # noqa: ARG001
     """アプリケーションのライフサイクルイベント。
-    
+
     起動時にデータベーステーブルを作成します。
     """
     models.Base.metadata.create_all(bind=engine)
@@ -48,12 +48,14 @@ app.add_middleware(
 
 class ItemCreate(BaseModel):
     """アイテム作成用のPydanticモデル。"""
+
     title: str = Field(min_length=1, max_length=255)
     description: str = Field(min_length=1, max_length=255)
 
 
 class ItemResponse(BaseModel):
     """アイテム返却用のPydanticモデル。"""
+
     id: int
     title: str
     description: str
@@ -64,7 +66,7 @@ class ItemResponse(BaseModel):
 @app.get("/")
 def read_root() -> dict[str, str]:
     """ルートエンドポイント。
-    
+
     ウェルカムメッセージを返却します。
     """
     return {"message": "Welcome to FastAPI + React Setup!"}
@@ -88,10 +90,10 @@ def create_item(item: ItemCreate, db: Session = Depends(get_db)) -> models.Item:
 def read_items(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ) -> list[models.Item]:
     """アイテムの一覧を取得します。
-    
+
     ページネーションのためにskipとlimitを指定できます。
     """
     try:

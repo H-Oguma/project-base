@@ -21,7 +21,7 @@ class Base(DeclarativeBase):
 
 def get_db() -> Generator[Session, None, None]:
     """データベースセッションを取得するジェネレータ関数。
-    
+
     リクエストごとにセッションを作成し、終了時にクローズします。
     """
     db = SessionLocal()
