@@ -1,9 +1,14 @@
-from contextlib import asynccontextmanager
-from typing import AsyncGenerator
+"""FastAPIアプリケーションのメインモジュール。
 
-from fastapi import Depends, FastAPI, HTTPException
+APIエンドポイントの定義およびアプリケーションの設定を行います。
+"""
+
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -13,15 +18,18 @@ from database import engine, get_db
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    # DBテーブルの作成
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # noqa: ARG001
+    """アプリケーションのライフサイクルイベント。
+
+    起動時にデータベーステーブルを作成します。
+    """
     models.Base.metadata.create_all(bind=engine)
     yield
 
 
 app = FastAPI(lifespan=lifespan)
 
-# CORS設定（環境変数から読み込む）
+# CORS設定 (環境変数から読み込む)
 # (as per security rules, explicitly define origins in production)
 origins = (
     settings.cors_origins.split(",")
@@ -39,11 +47,15 @@ app.add_middleware(
 
 
 class ItemCreate(BaseModel):
-    title: str
-    description: str
+    """アイテム作成用のPydanticモデル。"""
+
+    title: str = Field(min_length=1, max_length=255)
+    description: str = Field(min_length=1, max_length=255)
 
 
 class ItemResponse(BaseModel):
+    """アイテム返却用のPydanticモデル。"""
+
     id: int
     title: str
     description: str
@@ -53,11 +65,16 @@ class ItemResponse(BaseModel):
 
 @app.get("/")
 def read_root() -> dict[str, str]:
+    """ルートエンドポイント。
+
+    ウェルカムメッセージを返却します。
+    """
     return {"message": "Welcome to FastAPI + React Setup!"}
 
 
 @app.post("/items/", response_model=ItemResponse)
 def create_item(item: ItemCreate, db: Session = Depends(get_db)) -> models.Item:
+    """新しいアイテムを作成します。"""
     db_item = models.Item(title=item.title, description=item.description)
     db.add(db_item)
     try:
@@ -71,8 +88,14 @@ def create_item(item: ItemCreate, db: Session = Depends(get_db)) -> models.Item:
 
 @app.get("/items/", response_model=list[ItemResponse])
 def read_items(
-    skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    db: Session = Depends(get_db),
 ) -> list[models.Item]:
+    """アイテムの一覧を取得します。
+
+    ページネーションのためにskipとlimitを指定できます。
+    """
     try:
         items = db.query(models.Item).offset(skip).limit(limit).all()
         return items

@@ -1,4 +1,9 @@
-from typing import Generator
+"""バックエンドのテストモジュール。
+
+APIエンドポイントのテストを行います。
+"""
+
+from collections.abc import Generator
 
 import pytest
 from fastapi.testclient import TestClient
@@ -22,19 +27,26 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 
 @pytest.fixture(scope="function")
 def db_session() -> Generator[Session, None, None]:
-    # テーブルの作成
+    """テスト用のデータベースセッションを提供するフィクスチャ。
+
+    テストごとにテーブルを作成および破棄します。
+    """
     models.Base.metadata.create_all(bind=engine)
     db = TestingSessionLocal()
     try:
         yield db
     finally:
         db.close()
-        # テーブルの破棄
         models.Base.metadata.drop_all(bind=engine)
 
 
 @pytest.fixture(scope="function")
 def client(db_session: Session) -> Generator[TestClient, None, None]:
+    """テスト用のFastAPIクライアントを提供するフィクスチャ。
+
+    データベースの依存関係をテスト用のセッションでオーバーライドします。
+    """
+
     def override_get_db() -> Generator[Session, None, None]:
         try:
             yield db_session
@@ -48,12 +60,20 @@ def client(db_session: Session) -> Generator[TestClient, None, None]:
 
 
 def test_read_root(client: TestClient) -> None:
+    """ルートエンドポイントのテスト。
+
+    ウェルカムメッセージが正しく返却されることを確認します。
+    """
     response = client.get("/")
     assert response.status_code == 200
     assert response.json() == {"message": "Welcome to FastAPI + React Setup!"}
 
 
 def test_create_item(client: TestClient) -> None:
+    """アイテム作成エンドポイントの正常系テスト。
+
+    新しいアイテムが正しく作成されることを確認します。
+    """
     response = client.post(
         "/items/", json={"title": "Test Item", "description": "This is a test"}
     )
@@ -65,7 +85,10 @@ def test_create_item(client: TestClient) -> None:
 
 
 def test_read_items(client: TestClient) -> None:
-    # GET /items/ の正常系テスト
+    """アイテム一覧取得エンドポイントの正常系テスト。
+
+    作成したアイテムが一覧に含まれていることを確認します。
+    """
     client.post("/items/", json={"title": "Item 1", "description": "Desc 1"})
     client.post("/items/", json={"title": "Item 2", "description": "Desc 2"})
 
@@ -78,6 +101,9 @@ def test_read_items(client: TestClient) -> None:
 
 
 def test_create_item_validation_error(client: TestClient) -> None:
-    # 必須項目の不足による 422 異常系テスト
+    """アイテム作成エンドポイントの異常系テスト。
+
+    必須項目が不足している場合に422エラーが返却されることを確認します。
+    """
     response = client.post("/items/", json={"description": "Missing title"})
     assert response.status_code == 422

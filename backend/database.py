@@ -1,4 +1,9 @@
-from typing import Generator
+"""データベース接続およびセッション管理モジュール。
+
+SQLAlchemyの設定とセッション提供関数を定義します。
+"""
+
+from collections.abc import Generator
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
@@ -15,6 +20,10 @@ class Base(DeclarativeBase):
 
 
 def get_db() -> Generator[Session, None, None]:
+    """データベースセッションを取得するジェネレータ関数。
+
+    リクエストごとにセッションを作成し、終了時にクローズします。
+    """
     db = SessionLocal()
     try:
         yield db
