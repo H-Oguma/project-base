@@ -2,6 +2,11 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import App from "./App";
+import { Counter } from "./components/Counter";
+import { DocSection } from "./components/DocSection";
+import { Hero } from "./components/Hero";
+import { SocialSection } from "./components/SocialSection";
+import { DOC_LINKS, SOCIAL_LINKS } from "./constants/links";
 
 describe("App コンポーネント", () => {
   it("Get started のテキストが表示されること", () => {
@@ -42,6 +47,51 @@ describe("App コンポーネント", () => {
       expect(link).toHaveAttribute("href", href);
       expect(link).toHaveAttribute("target", "_blank");
       expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    });
+  });
+});
+
+describe("Hero コンポーネント", () => {
+  it("ヒーロー画像とテキストがレンダリングされること", () => {
+    render(<Hero />);
+    expect(screen.getByText(/Get started/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/React logo/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/Vite logo/i)).toBeInTheDocument();
+  });
+});
+
+describe("Counter コンポーネント", () => {
+  it("クリックでカウントアップすること", async () => {
+    const user = userEvent.setup();
+    render(<Counter />);
+    const button = screen.getByRole("button", { name: /Count is 0/i });
+    await user.click(button);
+    expect(screen.getByRole("button", { name: /Count is 1/i })).toBeInTheDocument();
+  });
+});
+
+describe("DocSection コンポーネント", () => {
+  it("定数データに基づいてドキュメントリンクを描画すること", () => {
+    render(<DocSection />);
+    expect(screen.getByText("Documentation")).toBeInTheDocument();
+    DOC_LINKS.forEach((link) => {
+      const el = screen.getByRole("link", { name: new RegExp(link.title, "i") });
+      expect(el).toHaveAttribute("href", link.url);
+      expect(el).toHaveAttribute("target", "_blank");
+      expect(el).toHaveAttribute("rel", "noopener noreferrer");
+    });
+  });
+});
+
+describe("SocialSection コンポーネント", () => {
+  it("定数データに基づいてソーシャルリンクを描画すること", () => {
+    render(<SocialSection />);
+    expect(screen.getByText("Connect with us")).toBeInTheDocument();
+    SOCIAL_LINKS.forEach((link) => {
+      const el = screen.getByRole("link", { name: new RegExp(link.title, "i") });
+      expect(el).toHaveAttribute("href", link.url);
+      expect(el).toHaveAttribute("target", "_blank");
+      expect(el).toHaveAttribute("rel", "noopener noreferrer");
     });
   });
 });
