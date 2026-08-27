@@ -1,7 +1,9 @@
+from typing import Generator
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 import models
@@ -19,7 +21,7 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 
 
 @pytest.fixture(scope="function")
-def db_session():
+def db_session() -> Generator[Session, None, None]:
     # テーブルの作成
     models.Base.metadata.create_all(bind=engine)
     db = TestingSessionLocal()
@@ -32,8 +34,8 @@ def db_session():
 
 
 @pytest.fixture(scope="function")
-def client(db_session):
-    def override_get_db():
+def client(db_session: Session) -> Generator[TestClient, None, None]:
+    def override_get_db() -> Generator[Session, None, None]:
         try:
             yield db_session
         finally:
@@ -45,13 +47,13 @@ def client(db_session):
     app.dependency_overrides.clear()
 
 
-def test_read_root(client):
+def test_read_root(client: TestClient) -> None:
     response = client.get("/")
     assert response.status_code == 200
     assert response.json() == {"message": "Welcome to FastAPI + React Setup!"}
 
 
-def test_create_item(client):
+def test_create_item(client: TestClient) -> None:
     response = client.post(
         "/items/", json={"title": "Test Item", "description": "This is a test"}
     )
@@ -62,7 +64,7 @@ def test_create_item(client):
     assert "id" in data
 
 
-def test_read_items(client):
+def test_read_items(client: TestClient) -> None:
     # GET /items/ の正常系テスト
     client.post("/items/", json={"title": "Item 1", "description": "Desc 1"})
     client.post("/items/", json={"title": "Item 2", "description": "Desc 2"})
@@ -75,7 +77,7 @@ def test_read_items(client):
     assert data[1]["title"] == "Item 2"
 
 
-def test_create_item_validation_error(client):
+def test_create_item_validation_error(client: TestClient) -> None:
     # 必須項目の不足による 422 異常系テスト
     response = client.post("/items/", json={"description": "Missing title"})
     assert response.status_code == 422
