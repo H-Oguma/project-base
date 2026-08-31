@@ -51,3 +51,15 @@ body:
       description: 本来はどうなるべきですか？
     validations:
       required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 環境情報
+      description: 不具合が発生した環境（OS、ブラウザ、Node/Python バージョン等）を記載してください。
+      placeholder: |
+        - OS: [例: macOS Sonoma 14.5 / Windows 11 / Ubuntu 22.04]
+        - ブラウザ: [例: Chrome 125 / Firefox 126 / Safari 17]
+        - Node.js バージョン: [例: v20.14.0]
+        - Python バージョン: [例: 3.12.3]
+    validations:
+      required: false
