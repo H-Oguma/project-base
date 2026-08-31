@@ -111,8 +111,8 @@ find . -type f | wc -l && find . -type f \( -path '*/.venv/*' -o -path '*/node_m
 
 ## A. ブランチ命名とベース
 - ベース: `<main>`
-- ブランチ名: `<prefix>/<Issue番号>-<short-name>`
-- prefix: 機能追加 `feature/` / バグ修正 `fix/` / ドキュメント `docs/` / リファクタ `refactor/`
+- ブランチ名: `<prefix>/issue-<Issue番号>-<short-name>`
+- prefix: 機能追加 `feature/` / バグ修正 `fix/` / ドキュメント `docs/` / リファクタ `refactor/` / 雑務・CI `chore/`
 
 ## B. PR
 - base は必ず `<main>` を明示。既定で `--draft`。
@@ -265,7 +265,7 @@ Use the GitHub CLI (`gh`) to create a new issue for the task.
 
 ## 2. Create and Checkout a Working Branch
 Create a new branch for the task. Do NOT work directly on the `main` or `master` branch.
-`git checkout -b issue-[number]-[short-description]`
+`git checkout -b <prefix>/issue-<number>-<short-description>`
 ```
 
 ### `create-pr` スキル

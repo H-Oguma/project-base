@@ -11,11 +11,11 @@ Cursor、Windsurf、GitHub Copilot、Cline などのAIアシスタントと協�
 
 ## 🌟 特徴
 
-- **AIコンテキスト (`AGENTS.md`)**: AIがプロジェクトの全体像を即座に把握するためのメタドキュメント。
-- **AIツール仕様 (`docs/architecture/antigravity-2.0-specs.md`)**: エージェント（Antigravity 2.0等）の操作や設定に関する仕様ドキュメント。
-- **グローバルルール (`.cursorrules`)**: AIエージェントに一貫した振る舞い（テスト駆動、日本語回答など）を強制。
-- **CI/CDパイプライン**: 自動テスト・自動Lintの整備により、AIが生成したコードの品質を担保。
-- **統一されたタスクランナー (`package.json`)**: AIが迷わずテストやLintを実行できるエントリーポイント。
+- **多層防御によるAI統制 (Antigravity 2.0)**: `AGENTS.md`（メタドキュメント/原則）、`.agents/rules/`（規約）、`.agents/hooks.json`（Hooksによる物理的強制）の4層アーキテクチャでAIの暴走・ルール逸脱を機械的に防止。
+- **Issue / PR 駆動開発の自動化**: スキル（`/start`, `/pr`）とHooks連携により、Issue起票からブランチ作成、PR作成、コードレビューまでのフローを標準化・自動化。
+- **マルチエージェント協調**: 実装エージェントとレビューエージェント（`reviewer`）の役割分担により、高品質なコード生成を実現。
+- **CI/CD & 品質ゲート**: 自動テスト・Lint・フォーマットチェック、ビルド検証、PRタイトル検証による厳格な品質担保。
+- **統一されたタスクランナー (`package.json`)**: AIや開発者が迷わずテストやLintを実行できる統一インターフェース。
 
 ## 📁 ディレクトリ構成
 
@@ -89,7 +89,7 @@ gh repo create your-new-project --public --source=. --remote=origin --push
 1. **タスクの開始 (`/start` コマンドの活用)**:
    AIアシスタント（エージェント）に対して **「`/start [タスク内容]`」** と指示すると、内部の `task-init` スキルが作動し、以下を自動化します。
    - GitHub に新規 Issue を起票
-   - `issue-[番号]-[概要]` という名前の作業ブランチを作成してチェックアウト
+   - `<prefix>/issue-<番号>-<short-name>`（例: `feature/issue-123-xxx`, `fix/issue-123-xxx` 等）という名前の作業ブランチを作成してチェックアウト
 2. **実装とテスト**:
    作成されたブランチ上で、AIと共に実装を進めます。`npm run test` で品質を確認します。
 3. **Pull Requestの作成 (`/pr` コマンドの活用)**:
