@@ -21,3 +21,7 @@
   エージェントのアクティビティを起動・監視するためのデスクトップ Electron アプリケーション「Antigravity 2.0」のUI構成や権限設定に関する仕様書です。
 - **[GitHub リポジトリ推奨設定ガイド (github-repository-settings.md)](./setup/github-repository-settings.md)**
   プロジェクトの品質やセキュリティを保つために、ブラウザの Settings 画面から行うべき推奨設定（Rulesets や自動削除など）をまとめています。
+
+## 4. 開発・貢献ガイド
+- **[開発・貢献ガイド (CONTRIBUTING.md)](../CONTRIBUTING.md)**
+  開発環境のセットアップ、ブランチ運用、コミットメッセージ規約、テスト・Lintの実行方法、PR作成フローをまとめた人間・開発者向けの総合ガイドです。
