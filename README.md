@@ -58,6 +58,19 @@ Cursor、Windsurf、GitHub Copilot、Cline などのAIアシスタントと協�
 | **開発に参加・貢献したい方** | [開発・貢献ガイド (`CONTRIBUTING.md`)](CONTRIBUTING.md) |
 | **テンプレートとして使い始めたい方** | 下記の「🚀 使い方」セクション → [セットアップ Playbook (`docs/setup/antigravity-setup-playbook.md`)](docs/setup/antigravity-setup-playbook.md) |
 | **設計や技術的な判断の経緯を知りたい方** | [システム設計書 (`docs/architecture/system-design.md`)](docs/architecture/system-design.md) → [AIアーキテクチャ設計書 (`docs/architecture/ai-architecture.md`)](docs/architecture/ai-architecture.md) |
+| **MCP（GitHub連携等）を設定したい方** | [MCP サーバー セットアップガイド (`docs/setup/mcp-setup.md`)](docs/setup/mcp-setup.md) |
+
+## 🛠️ 前提条件 (Prerequisites)
+
+本プロジェクトを使用・開発するには、以下のツールがローカル環境にインストールされている必要があります。
+
+| ツール | 推奨バージョン | 用途 |
+|---|---|---|
+| **Node.js** | `>= 20.0.0` (`npm >= 10.0.0`) | フロントエンド開発、タスクランナー、Git Hooks |
+| **Python** | `>= 3.11` | バックエンド開発 (FastAPI) |
+| **uv** | 最新版 (`>= 0.5.0`) | 高速なPythonパッケージ・仮想環境マネージャー |
+| **GitHub CLI (`gh`)** | 最新版 | Issue / PR の作成・操作 (`gh auth login` 必須) |
+| **Docker** (任意) | 最新版 (Compose v2) | コンテナ環境でのビルド・動作確認 |
 
 ## 🚀 使い方
 
