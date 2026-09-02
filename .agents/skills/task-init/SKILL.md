@@ -24,6 +24,12 @@ gh issue create --title "[Brief Task Title]" --body "[Detailed description of th
 ```
 If an issue for this task already exists, skip this step and use the existing issue number.
 
+**IMPORTANT:** Once the issue is created, you MUST link it to the project board using the following command:
+```bash
+gh project item-add 1 --owner <Repository-Owner> --url <Created-Issue-URL>
+# Example: gh project item-add 1 --owner H-Oguma --url https://github.com/H-Oguma/project-base/issues/123
+```
+
 ## 3. Create and Checkout a Working Branch
 Create a new branch for the task. Do NOT work directly on the `main` or `master` branch.
 You MUST pull the latest changes from the `main` branch before creating a new working branch.
@@ -35,4 +41,4 @@ git checkout -b <prefix>/issue-<number>-<short-description>
 ```
 
 ## 4. Report and Execute
-Once the issue is created and the branch is checked out, report the created issue URL and branch name to the user. Then proceed with creating an implementation plan or directly executing the task.
+Once the issue is created, linked to the project, and the branch is checked out, report the created issue URL and branch name to the user. Then proceed with creating an implementation plan or directly executing the task.

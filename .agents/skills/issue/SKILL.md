@@ -41,8 +41,17 @@ gh issue create \
 ```
 ※ `MCP` ツール（`github` サーバーの `create_issue`）を使用して起票しても構いません。その場合も `labels` 引数に優先度とサイズのラベルを必ず配列で渡してください。
 
-### 4. ユーザーへの報告
-起票が完了したら、作成されたIssueのリンク（URL）と、AIが評価した優先度・サイズをユーザーに報告してタスクを完了します。
-> 例: 「Issue #123 を起票しました！今回のタスクは『Size: M』『P2: Normal』として評価・ラベリングしています。着手する際はお声がけください。」
+### 4. Project への紐付け ★追加手順
+Issueが作成されたら、取得したIssue番号（またはURL）を使って、作成したIssueを「Project 1 (AI駆動開発)」に紐付けてください。
+このプロジェクトでは、以下のコマンドを実行することで紐付けを完了させます。
 
-> Last Updated: 2026-08-24
+```bash
+gh project item-add 1 --owner <リポジトリのOwner名> --url <作成したIssueのURL>
+# 例: gh project item-add 1 --owner H-Oguma --url https://github.com/H-Oguma/project-base/issues/123
+```
+
+### 5. ユーザーへの報告
+起票とProjectへの紐付けが完了したら、作成されたIssueのリンク（URL）と、AIが評価した優先度・サイズをユーザーに報告してタスクを完了します。
+> 例: 「Issue #123 を起票し、Projectボードに紐付けました！今回のタスクは『Size: M』『P2: Normal』として評価・ラベリングしています。着手する際はお声がけください。」
+
+> Last Updated: 2026-09-02
