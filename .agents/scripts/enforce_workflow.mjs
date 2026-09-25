@@ -271,6 +271,9 @@ try {
     }
     if (/^\s*gh\s+pr\s+(list|view|status)\b/.test(commandLine)) allowed = true;
     if (/^\s*gh\s+repo\s+view\b/.test(commandLine)) allowed = true;
+    
+    // プロジェクト操作系（Issue起票時の自動紐付け等で実行されるため許可）
+    if (/^\s*gh\s+project\s+(item-add|item-list|view)\b/.test(commandLine)) allowed = true;
 
     if (allowed) {
       console.log(JSON.stringify({ decision: 'allow' }));
