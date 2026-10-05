@@ -10,6 +10,12 @@ import { fileURLToPath } from 'node:url';
 
 const HOOK_PATH = join(dirname(fileURLToPath(import.meta.url)), 'enforce_workflow.mjs');
 
+// git フック（pre-push 等）経由で実行されると GIT_DIR などが継承され、
+// 一時ディレクトリではなく呼び出し元のリポジトリが参照されてしまうため GIT_* を除去する
+const ISOLATED_ENV = Object.fromEntries(
+  Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')),
+);
+
 let nonGitDir;
 let mainRepoDir;
 
@@ -18,7 +24,7 @@ before(() => {
   nonGitDir = mkdtempSync(join(tmpdir(), 'hook-nongit-'));
   // main ブランチの一時リポジトリ（main 上で許可されるコマンドの検証用）
   mainRepoDir = mkdtempSync(join(tmpdir(), 'hook-main-'));
-  const git = (...args) => execFileSync('git', args, { cwd: mainRepoDir, stdio: 'ignore' });
+  const git = (...args) => execFileSync('git', args, { cwd: mainRepoDir, stdio: 'ignore', env: ISOLATED_ENV });
   git('init', '-q', '-b', 'main');
   git('-c', 'user.name=test', '-c', 'user.email=test@example.com', 'commit', '-q', '--allow-empty', '-m', 'init');
 });
@@ -38,7 +44,7 @@ function runHook(toolCall, cwd) {
     cwd,
     input: JSON.stringify({ toolCall }),
     encoding: 'utf-8',
-    env: { ...process.env, GH_PROMPT_DISABLED: '1' },
+    env: { ...ISOLATED_ENV, GH_PROMPT_DISABLED: '1' },
   });
   return JSON.parse(result.stdout.trim().split('\n').pop());
 }
