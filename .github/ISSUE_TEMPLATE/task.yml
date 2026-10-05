@@ -63,4 +63,4 @@ body:
     id: parent-issue
     attributes:
       label: 親Issue (もしあれば)
-      description: このIssueがサブタスクの場合、親Issueの番号を `#123` の形式で記載してください。
+      description: このIssueがサブタスクの場合、親Issueの番号を `#123` の形式で記載してください。記載すると GitHub Actions により自動で Sub-issue として紐付けられます。

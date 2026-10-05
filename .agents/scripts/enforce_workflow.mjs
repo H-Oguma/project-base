@@ -1,5 +1,6 @@
 import fs from 'fs';
 import { execSync } from 'child_process';
+import { extractParentIssueNumber, validateSubIssueCommand } from './lib/sub_issue.mjs';
 
 try {
   const input = fs.readFileSync(0, 'utf-8');
@@ -40,6 +41,17 @@ try {
 
   // --- 子Issueの親Issue紐付けガードレール (Issue作成時) ---
   if (toolName === 'call_mcp_tool' && data.toolCall?.args?.ToolName === 'create_issue') {
+    // MCP の create_issue は GitHub の Sub-issue（親子関係メタデータ）を設定できないため、
+    // 親Issueが記載されたサブIssueの起票は gh CLI の --parent オプションへ誘導する
+    const parentFromBody = extractParentIssueNumber(data.toolCall?.args?.body || '');
+    if (parentFromBody !== null) {
+      console.log(JSON.stringify({
+        decision: 'deny',
+        reason: `🚨 [サブIssue紐付け違反] 本文に親Issue (#${parentFromBody}) が記載されていますが、MCP の create_issue では GitHub の Sub-issue（親子関係メタデータ）として紐付けできません。\nサブIssueは必ず gh CLI で \`gh issue create --parent ${parentFromBody} --title "..." --body "..." --label "P?: ...,Size: ?"\` の形式で起票してください。`
+      }));
+      process.exit(0);
+    }
+
     try {
       const branch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
       const branchIssueMatch = branch.match(/issue-(\d+)/i);
@@ -53,13 +65,24 @@ try {
         if (!regex.test(issueBody)) {
           console.log(JSON.stringify({
             decision: 'deny',
-            reason: `🚨 [トレーサビリティ違反] 現在のブランチ (issue-${parentIssueNumber}) からサブIssueを作成しようとしていますが、本文に親Issue番号 (#${parentIssueNumber}) へのリンクが含まれていません。\n孤立したIssue (Orphan Issue) の発生を防ぐため、本文に「親Issue: #${parentIssueNumber}」のように必ずリンクを記載してください。`
+            reason: `🚨 [トレーサビリティ違反] 現在のブランチ (issue-${parentIssueNumber}) からIssueを作成しようとしていますが、本文に Issue #${parentIssueNumber} へのリンクが含まれていません。\n孤立したIssue (Orphan Issue) の発生を防ぐため、以下のいずれかで対応してください。\n- サブIssueの場合: MCP ではなく \`gh issue create --parent ${parentIssueNumber} ...\` で起票し、GitHub の Sub-issue として紐付ける（本文にも「親Issue: #${parentIssueNumber}」と記載）\n- 独立したIssueの場合: 本文に「関連Issue: #${parentIssueNumber}」と記載する`
           }));
           process.exit(0);
         }
       }
     } catch (e) {
       // ignore git errors
+    }
+  }
+  // ------------------------------------------
+
+  // --- サブIssue紐付けガードレール (CLIでのIssue作成時・全ブランチ共通) ---
+  // 本文に「親Issue: #N」があるのに --parent が無い起票をブロックし、Sub-issue の紐付け漏れを防ぐ
+  if (toolName === 'run_command') {
+    const subIssueViolation = validateSubIssueCommand(data.toolCall?.args?.CommandLine || '');
+    if (subIssueViolation) {
+      console.log(JSON.stringify({ decision: 'deny', reason: subIssueViolation }));
+      process.exit(0);
     }
   }
   // ------------------------------------------
@@ -252,23 +275,13 @@ try {
           }));
           process.exit(0);
         }
-        // コマンドラインまたはファイル入力などから本文を取得するのは難しいが、
-        // 少なくとも --body 引数に親Issue番号が含まれているかを簡易チェックする
-        const branchIssueMatch = branch.match(/issue-(\d+)/i);
-        if (branchIssueMatch && commandLine.includes('--body')) {
-          const parentIssueNumber = branchIssueMatch[1];
-          const regex = new RegExp(`#${parentIssueNumber}\\b`);
-          if (!regex.test(commandLine)) {
-            console.log(JSON.stringify({
-              decision: 'deny',
-              reason: `🚨 [トレーサビリティ違反] 現在のブランチ (issue-${parentIssueNumber}) からサブIssueをCLIで作成しようとしていますが、--body 内に親Issue番号 (#${parentIssueNumber}) へのリンクが見当たりません。\n孤立したIssueの発生を防ぐため、親Issueへのリンクを記載してください。`
-            }));
-            process.exit(0);
-          }
-        }
+        // ※ 親Issueの記載と --parent の整合性チェックは、全ブランチ共通の
+        //   「サブIssue紐付けガードレール」(validateSubIssueCommand) で実施済み
       }
       allowed = true;
     }
+    // 既存Issueを Sub-issue として紐付ける操作（親子関係の修正）は許可する
+    if (/^\s*gh\s+issue\s+edit\b/.test(commandLine) && /(?:^|\s)--(?:parent|add-sub-issue)(?:\s|=)/.test(commandLine)) allowed = true;
     if (/^\s*gh\s+pr\s+(list|view|status)\b/.test(commandLine)) allowed = true;
     if (/^\s*gh\s+repo\s+view\b/.test(commandLine)) allowed = true;
     

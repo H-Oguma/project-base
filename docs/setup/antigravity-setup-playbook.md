@@ -1,6 +1,6 @@
 # Antigravity 2.0 駆動開発セットアップ Playbook（単体完結版）
 
-> Last Updated: 2026-08-24
+> Last Updated: 2026-10-06
 
 **このファイル 1 本を AI (Antigravity) に読ませれば、新しいプロジェクトに Issue 起票 → 実装 → PR → レビュー → リリースの環境を展開できる**ことを目標にしたドキュメントです。
 
@@ -121,6 +121,7 @@ find . -type f | wc -l && find . -type f \( -path '*/.venv/*' -o -path '*/node_m
 ## C. Issue
 - 起票前に `gh issue list` で重複確認。
 - 親の完了条件に含まれない不具合を見つけた場合は、sub-issue ではなく独立 Issue にする。
+- sub-issue は本文への記載だけでなく、必ず GitHub の Sub-issue 機能で紐付ける（`gh issue create --parent <N>`）。
 
 ## D. コミット / タイトル様式
 - Conventional Commits + scope + 末尾に Issue 番号、本文は日本語。

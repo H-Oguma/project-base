@@ -21,6 +21,7 @@
 ## C. Issue
 - 作業開始前に必ず `gh issue list` 等で重複がないか確認する。
 - 親タスクの完了条件に含まれない不具合を新たに見つけた場合は、sub-issue ではなく独立した Issue として起票する。
+- sub-issue を起票する場合は、本文への「親Issue: #N」の記載に加え、**必ず GitHub の Sub-issue 機能（親子関係メタデータ）で紐付ける**（`gh issue create --parent <N>`）。詳細は `task-management.md` を参照。
 
 ## D. コミット / タイトル様式
 - Conventional Commits + scope の形式に従う。

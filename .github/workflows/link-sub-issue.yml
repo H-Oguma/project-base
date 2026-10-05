@@ -1,0 +1,98 @@
+name: Link Sub-issue
+
+# Issue本文に記載された「親Issue: #N」（Issueフォームの「親Issue」欄を含む）を検出し、
+# GitHub の Sub-issue（親子関係メタデータ）として自動で紐付けるセーフティネット。
+# AIが --parent を付け忘れた場合や、人間がフォームから起票した場合の紐付け漏れを防ぐ。
+on:
+  issues:
+    types: [opened, edited, reopened]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: link-sub-issue-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  link:
+    name: 親Issueへの Sub-issue 紐付け
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 親Issue判定ロジック（フックと共通）のみ取得する
+          sparse-checkout: .agents/scripts/lib
+
+      - name: Sub-issue として紐付け
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { pathToFileURL } = require('url');
+            const { extractParentIssueNumber } = await import(
+              pathToFileURL(`${process.env.GITHUB_WORKSPACE}/.agents/scripts/lib/sub_issue.mjs`).href
+            );
+
+            const issue = context.payload.issue;
+            const parentNumber = extractParentIssueNumber(issue.body || '');
+            if (parentNumber === null) {
+              core.info('本文に親Issueの記載がないためスキップします。');
+              return;
+            }
+            if (parentNumber === issue.number) {
+              core.warning(`#${issue.number} は自分自身を親Issueとして指定しているためスキップします。`);
+              return;
+            }
+
+            const { owner, repo } = context.repo;
+            let data;
+            try {
+              data = await github.graphql(
+                `query($owner: String!, $repo: String!, $child: Int!, $parent: Int!) {
+                  repository(owner: $owner, name: $repo) {
+                    child: issue(number: $child) { id parent { number } }
+                    parent: issue(number: $parent) { id }
+                  }
+                }`,
+                { owner, repo, child: issue.number, parent: parentNumber },
+              );
+            } catch (error) {
+              // 親Issueが存在しない（PR番号を指定した等）場合はジョブを失敗させて気付けるようにする
+              core.setFailed(`親Issue #${parentNumber} の取得に失敗しました: ${error.message}`);
+              return;
+            }
+
+            const { child, parent } = data?.repository || {};
+            if (!child) {
+              core.setFailed(`子Issue #${issue.number} の取得に失敗しました。`);
+              return;
+            }
+            if (!parent) {
+              core.setFailed(`親Issue #${parentNumber} が見つかりませんでした（存在しないIssue番号、またはPull Request番号が指定されている可能性があります）。`);
+              return;
+            }
+            const currentParent = child.parent?.number;
+            if (currentParent === parentNumber) {
+              core.info(`#${issue.number} は既に #${parentNumber} の Sub-issue として紐付いています。`);
+              return;
+            }
+            if (currentParent) {
+              // 既存の親子関係を意図せず上書きしないよう、自動では付け替えない
+              core.warning(
+                `#${issue.number} は既に #${currentParent} の Sub-issue です。本文の親Issue (#${parentNumber}) と異なるため自動では付け替えません。` +
+                ` 必要であれば \`gh issue edit ${issue.number} --parent ${parentNumber}\` を実行してください。`,
+              );
+              return;
+            }
+
+            await github.graphql(
+              `mutation($parentId: ID!, $childId: ID!) {
+                addSubIssue(input: { issueId: $parentId, subIssueId: $childId }) {
+                  issue { number }
+                  subIssue { number }
+                }
+              }`,
+              { parentId: parent.id, childId: child.id },
+            );
+            core.info(`#${issue.number} を #${parentNumber} の Sub-issue として紐付けました。`);

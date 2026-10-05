@@ -41,6 +41,22 @@ gh issue create \
 ```
 ※ `MCP` ツール（`github` サーバーの `create_issue`）を使用して起票しても構いません。その場合も `labels` 引数に優先度とサイズのラベルを必ず配列で渡してください。
 
+#### サブIssue（親Issueがある場合）の起票 ★必須
+親Issueが存在するタスク（エピックの分割など）を起票する場合は、**必ず `gh issue create --parent <親Issue番号>` を使用**し、GitHub の Sub-issue（親子関係メタデータ）として紐付けてください。本文に「親Issue: #N」と書くだけでは紐付きません。
+- MCP の `create_issue` は Sub-issue を設定できないため、**サブIssueの起票には使用しないでください**（フックでブロックされます）。
+- 本文にも `親Issue: #<番号>` を記載してください。
+
+```bash
+gh issue create --parent 123 \
+  --title "[Task]: パスワードリセットメールの送信処理" \
+  --body "## 概要\nリセット用メールの送信処理を実装する。\n\n親Issue: #123" \
+  --label "enhancement,P2: Normal,Size: S"
+```
+
+起票後は `gh issue view <子Issue番号> --json parent` で親子関係が設定されたことを確認してください。
+既存Issueを後から紐付ける場合は `gh issue edit <子Issue番号> --parent <親Issue番号>` を使用します。
+詳細は `.agents/rules/task-management.md` の「サブIssueの紐付け」を参照してください。
+
 ### 4. Project への紐付け ★追加手順
 Issueが作成されたら、取得したIssue番号（またはURL）を使って、作成したIssueを「Project 1 (AI駆動開発)」に紐付けてください。
 このプロジェクトでは、以下のコマンドを実行することで紐付けを完了させます。
@@ -54,4 +70,4 @@ gh project item-add 1 --owner <リポジトリのOwner名> --url <作成したIs
 起票とProjectへの紐付けが完了したら、作成されたIssueのリンク（URL）と、AIが評価した優先度・サイズをユーザーに報告してタスクを完了します。
 > 例: 「Issue #123 を起票し、Projectボードに紐付けました！今回のタスクは『Size: M』『P2: Normal』として評価・ラベリングしています。着手する際はお声がけください。」
 
-> Last Updated: 2026-09-02
+> Last Updated: 2026-10-06

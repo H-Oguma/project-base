@@ -24,6 +24,14 @@ gh issue create --title "[Brief Task Title]" --body "[Detailed description of th
 ```
 If an issue for this task already exists, skip this step and use the existing issue number.
 
+**IMPORTANT (Sub-issues):** If the new task is a sub-task of an existing parent issue (e.g. splitting a `Size: L` epic), you MUST create it with `gh issue create --parent <parent-number>` so that it is linked as a GitHub **Sub-issue** (parent/child metadata). Writing `親Issue: #N` in the body alone does NOT create the link. Do NOT use the MCP `create_issue` tool for sub-issues because it cannot set the parent (the hook will block it). Also include `親Issue: #<parent-number>` in the body.
+```bash
+gh issue create --parent 123 --title "[Brief Task Title]" --body "... 親Issue: #123" --label "P2: Normal,Size: S"
+# 既存Issueを後から紐付ける場合: gh issue edit <child-number> --parent <parent-number>
+# 紐付けの確認: gh issue view <child-number> --json parent
+```
+See the "サブIssueの紐付け" section in `.agents/rules/task-management.md` for details.
+
 **IMPORTANT:** Once the issue is created, you MUST link it to the project board using the following command:
 ```bash
 gh project item-add 1 --owner <Repository-Owner> --url <Created-Issue-URL>
