@@ -2,8 +2,7 @@
 
 # Git Hooks の自動登録と実行権限付与
 setup-hooks:
-	@git config core.hooksPath .githooks 2>/dev/null || true
-	@chmod +x .githooks/* 2>/dev/null || true
+	@bash ./setup-hooks.sh
 
 # AI・開発者共通のワンコマンド全方位検証ゲート (脆弱性監査・静的解析・テスト・ビルド)
 check: setup-hooks check-root check-backend check-frontend
@@ -15,7 +14,7 @@ check-root:
 
 # バックエンドの依存関係セキュリティ監査・静的解析・フォーマット検査・単体/統合テスト
 check-backend:
-	cd backend && uv run pip-audit
+	cd backend && uv run pip-audit --timeout 60
 	cd backend && uv run ruff check .
 	cd backend && uv run ruff format --check .
 	cd backend && uv run pytest -q --tb=short
