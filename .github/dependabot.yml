@@ -9,13 +9,21 @@ updates:
       time: "04:00"
       timezone: "Asia/Tokyo"
     open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore"
+      include: "scope"
     groups:
       root-dependencies:
+        applies-to: version-updates
         patterns:
           - "*"
         update-types:
           - "minor"
           - "patch"
+      root-security-dependencies:
+        applies-to: security-updates
+        patterns:
+          - "*"
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
@@ -29,13 +37,21 @@ updates:
       time: "04:00"
       timezone: "Asia/Tokyo"
     open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore"
+      include: "scope"
     groups:
       python-dependencies:
+        applies-to: version-updates
         patterns:
           - "*"
         update-types:
           - "minor"
           - "patch"
+      python-security-dependencies:
+        applies-to: security-updates
+        patterns:
+          - "*"
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
@@ -49,13 +65,21 @@ updates:
       time: "04:00"
       timezone: "Asia/Tokyo"
     open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore"
+      include: "scope"
     groups:
       frontend-dependencies:
+        applies-to: version-updates
         patterns:
           - "*"
         update-types:
           - "minor"
           - "patch"
+      frontend-security-dependencies:
+        applies-to: security-updates
+        patterns:
+          - "*"
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
@@ -69,6 +93,13 @@ updates:
       time: "04:00"
       timezone: "Asia/Tokyo"
     open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      docker-backend:
+        patterns:
+          - "*"
 
   # フロントエンド Dockerfile ベースイメージ監視
   - package-ecosystem: "docker"
@@ -79,6 +110,13 @@ updates:
       time: "04:00"
       timezone: "Asia/Tokyo"
     open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      docker-frontend:
+        patterns:
+          - "*"
     ignore:
       - dependency-name: "node"
         update-types: ["version-update:semver-major"]
@@ -92,6 +130,9 @@ updates:
       time: "04:00"
       timezone: "Asia/Tokyo"
     open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore"
+      include: "scope"
     groups:
       actions:
         patterns:

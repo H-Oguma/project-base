@@ -12,6 +12,8 @@ jobs:
   pr-body-check:
     name: PR Body Format Check
     runs-on: ubuntu-latest
+    # Dependabot による自動生成 PR は人間用の本文テンプレート検証をバイパス
+    if: github.actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]'
     # pull-requests: write で PR へのコメント作成・更新・削除が可能
     # （GitHub では PR コメントは内部的に Issues API を使用するが、
     #  pull-requests: write で両方カバーされる）
@@ -22,6 +24,10 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            if (context.actor === 'dependabot[bot]' || context.payload.pull_request.user?.login === 'dependabot[bot]') {
+              core.info('🤖 Dependabotによる自動生成PRのため、タイトル検証をスキップします');
+              return;
+            }
             const title = context.payload.pull_request.title || '';
             const titleRegex = /^\[(Feature|Bugfix|Refactor|Docs|Chore)\]\s+.+/i;
             if (!titleRegex.test(title)) {
@@ -34,6 +40,10 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            if (context.actor === 'dependabot[bot]' || context.payload.pull_request.user?.login === 'dependabot[bot]') {
+              core.info('🤖 Dependabotによる自動生成PRのため、本文フォーマット検証をスキップします');
+              return;
+            }
             const body = context.payload.pull_request.body || '';
             const errors = [];
 

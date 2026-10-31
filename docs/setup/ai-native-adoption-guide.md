@@ -103,7 +103,35 @@ flowchart LR
 
 ---
 
-## 5. よくあるトラブルシューティング
+## 5. 依存関係セキュリティ運用 & 自動マージ（Dependabot & Security Radar）
+
+本アーキテクチャでは、依存パッケージの脆弱性検知・修正・マージを極小の認知負荷で自律運用する仕組みを完備しています。
+
+### 🛡️ 3つの運用ベストプラクティス
+1. **グループ化アップデート（Grouped Updates）**:
+   - `.github/dependabot.yml` にて `applies-to: version-updates` と `applies-to: security-updates` を設定。
+   - 週次更新PRやセキュリティアラートPRがパッケージごとに乱立せず、エコシステムごとに1つのPRに自動集約されます。
+2. **PR Lint バイパス & Conventional Commits 統一**:
+   - `commit-message: prefix: "chore", include: "scope"` により、コミット履歴・PRタイトルが `chore(deps): ...` で統一されます。
+   - `.github/workflows/pr-lint.yml` にて `dependabot[bot]` をバイパスし、人間向けテンプレートの必須入力チェックで自動PRが停止するのを防止します。
+3. **安全な自動Approve & Auto-merge**:
+   - `.github/workflows/security-audit.yml` にて `dependabot/fetch-metadata@v2` を連携。
+   - 破壊的変更を含まない非メジャー更新（マイナー・パッチ・セキュリティ修正）は、自動でレビュー承認 (`gh pr review --approve`) と自動スカッシュマージ (`gh pr merge --auto --squash`) がセットされます。CI（テスト・Lint）がパスすると自動的に `main` へ安全に取り込まれます。
+
+### 🌐 他リポジトリへの設定反映コマンド（ワンライナー）
+GitHubの「Auto-merge」「マージ後ブランチ自動削除」「Squashマージ」をCLIから一括で有効化します：
+
+```bash
+# 対象リポジトリの Auto-merge / ブランチ自動削除 / Squashマージを有効化
+gh api -X PATCH /repos/<owner>/<repo> \
+  -f allow_auto_merge=true \
+  -f delete_branch_on_merge=true \
+  -f allow_squash_merge=true
+```
+
+---
+
+## 6. よくあるトラブルシューティング
 
 ### Q1. `git commit` すると「mainブランチへの直接コミットは物理的に禁止されています」と怒られる
 - **原因**: `main` ブランチにいます。
