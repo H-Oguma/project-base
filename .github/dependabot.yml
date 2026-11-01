@@ -8,6 +8,11 @@ updates:
       day: "monday"
       time: "04:00"
       timezone: "Asia/Tokyo"
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+      semver-minor-days: 7
+      semver-patch-days: 3
     open-pull-requests-limit: 10
     commit-message:
       prefix: "chore"
@@ -36,6 +41,11 @@ updates:
       day: "monday"
       time: "04:00"
       timezone: "Asia/Tokyo"
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+      semver-minor-days: 7
+      semver-patch-days: 3
     open-pull-requests-limit: 10
     commit-message:
       prefix: "chore"
@@ -64,6 +74,11 @@ updates:
       day: "monday"
       time: "04:00"
       timezone: "Asia/Tokyo"
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+      semver-minor-days: 7
+      semver-patch-days: 3
     open-pull-requests-limit: 10
     commit-message:
       prefix: "chore"
@@ -92,6 +107,11 @@ updates:
       day: "monday"
       time: "04:00"
       timezone: "Asia/Tokyo"
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+      semver-minor-days: 7
+      semver-patch-days: 3
     open-pull-requests-limit: 5
     commit-message:
       prefix: "chore"
@@ -100,6 +120,13 @@ updates:
       docker-backend:
         patterns:
           - "*"
+        update-types:
+          - "patch"
+    ignore:
+      - dependency-name: "python"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
 
   # フロントエンド Dockerfile ベースイメージ監視
   - package-ecosystem: "docker"
@@ -109,6 +136,11 @@ updates:
       day: "monday"
       time: "04:00"
       timezone: "Asia/Tokyo"
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+      semver-minor-days: 7
+      semver-patch-days: 3
     open-pull-requests-limit: 5
     commit-message:
       prefix: "chore"
@@ -117,6 +149,9 @@ updates:
       docker-frontend:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
     ignore:
       - dependency-name: "node"
         update-types: ["version-update:semver-major"]
@@ -129,11 +164,24 @@ updates:
       day: "monday"
       time: "04:00"
       timezone: "Asia/Tokyo"
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+      semver-minor-days: 7
+      semver-patch-days: 3
     open-pull-requests-limit: 5
     commit-message:
       prefix: "chore"
       include: "scope"
     groups:
       actions:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      actions-security:
+        applies-to: security-updates
         patterns:
           - "*"
