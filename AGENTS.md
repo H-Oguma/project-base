@@ -1,6 +1,6 @@
 # AGENTS.md — AI-Native Engineering Guide for project-base v2.0
 
-> Last Updated: 2026-10-24
+> Last Updated: 2026-11-02
 
 このリポジトリは **AI駆動開発（AI-Native Development）** のテンプレート兼マスター母艦として設計されています。
 AIエージェント（および人間開発者）が機能追加・バグ修正・リファクタリングを行う際は、必ず以下の憲章と検証コマンドに従ってください。
@@ -36,9 +36,10 @@ AIエージェント（および人間開発者）が機能追加・バグ修正
 ```text
 .
 ├── .githooks/        # ゼロトラスト物理ロック (pre-commit, commit-msg, pre-push)
-├── .agents/          # AIエージェント向けルール・スキル定義
+├── .agents/          # AIエージェント向けルール・スキル・ガードレール定義
 │   ├── rules/        # 開発フロー、TDD、セキュリティ等のAI向け詳細ルール
-│   └── skills/       # カスタムスキル (advisor-planner, task-init, issue, pr 等)
+│   ├── scripts/      # ワークフロー強制スクリプト (enforce_workflow.mjs 等)
+│   └── skills/       # カスタムスキル (task-init, issue, create-pr, advisor-planner, agents-md-management)
 ├── .github/          # GitHub Actions (CI/CD) や Issue/PR テンプレート
 ├── backend/          # FastAPIベースのバックエンドアプリケーション (uv 管理)
 │   ├── main.py       # APIエンドポイント
@@ -60,10 +61,11 @@ AIエージェント（および人間開発者）が機能追加・バグ修正
 
 | コマンド | 説明 |
 | :--- | :--- |
-| `make check` | **【必須】** Gitフック登録 + Backend (Ruff, Pytest) + Frontend (Oxlint, Vitest, Build) の一括検証 |
+| `make check` | **【必須】** Gitフック登録 + セキュリティ監査 + Backend (pip-audit, Ruff, Pytest) + Frontend (npm audit, Oxlint, Vitest, Build) の一括検証 |
 | `make setup-hooks` | `.githooks/` をローカルリポジトリに登録し実行権限を付与 |
-| `make check-backend` | バックエンドの静的解析・フォーマット検査・テストを実行 |
-| `make check-frontend` | フロントエンドの静的解析・テスト・本番ビルド検証を実行 |
+| `make check-root` | ルートの依存関係セキュリティ監査 (`npm audit`) を実行 |
+| `make check-backend` | バックエンドのセキュリティ監査・静的解析・フォーマット検査・テストを実行 |
+| `make check-frontend` | フロントエンドのセキュリティ監査・静的解析・テスト・本番ビルド検証を実行 |
 | `make dev` | バックエンドとフロントエンドの開発サーバーを並行起動 |
 
 ---
@@ -89,21 +91,23 @@ AIエージェント（および人間開発者）が機能追加・バグ修正
 
 `main` ブランチを常にクリーンで動作保証された状態（セーブポイント）として保つため、作業時は必ずトピックブランチを切ってください。
 
-### 5.1. ブランチ命名規則
-- **機能追加**: `feat/<short-name>`
-- **バグ修正**: `fix/<short-name>`
-- **リファクタリング**: `refactor/<short-name>`
-- **ドキュメント・設定整備**: `chore/<short-name>` または `docs/<short-name>`
-- **Issue連携**: `issue-[番号]-<short-name>`
+### 5.1. ブランチ命名規則（Issue番号必須）
+ワークフロー強制フック（`.agents/scripts/enforce_workflow.mjs`）により、ブランチ名には必ず `issue-<番号>` を含める必要があります（[task-init](.agents/skills/task-init/SKILL.md) スキル参照）：
+- **機能追加**: `feature/issue-<番号>-<short-name>`
+- **バグ修正**: `fix/issue-<番号>-<short-name>`
+- **リファクタリング**: `refactor/issue-<番号>-<short-name>`
+- **ドキュメント・設定整備**: `docs/issue-<番号>-<short-name>` または `chore/issue-<番号>-<short-name>`
 
 ### 5.2. 標準開発サイクル（Worker ➔ Reviewer 分離手順）
-1. **ブランチ作成 (Worker)**:
+1. **Issue起票 & ブランチ作成 (Worker)**:
    ```bash
-   git switch main && git pull origin main
-   git switch -c feat/<short-name>
+   git checkout main
+   git pull origin main
+   git checkout -b feature/issue-<番号>-<short-name>
    ```
 2. **実装・ローカル検証 (Worker)**:
    - コードおよびドキュメントを変更し、必ず `make check` を実行して全テスト・ビルドがパスすることを確認します。
+   - セッション中に新たな学びやルールの乖離が見つかった場合は、[agents-md-management](.agents/skills/agents-md-management/SKILL.md) スキルを用いて `AGENTS.md` や `.agents/rules/` をメンテナンスします。
 3. **コミット & レビュー依頼 (Worker)**:
    - 日本語 Conventional Commits 形式（`feat: ...`）でコミットします。
    - **Worker自身はマージを行わず**、親エージェント（Reviewer）へ変更サマリー（30行以内）を添えてレビュー依頼を行います。
