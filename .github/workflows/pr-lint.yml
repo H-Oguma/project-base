@@ -21,7 +21,7 @@ jobs:
       pull-requests: write
     steps:
       - name: PRタイトルのフォーマットチェック
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
           script: |
             if (context.actor === 'dependabot[bot]' || context.payload.pull_request.user?.login === 'dependabot[bot]') {
@@ -37,7 +37,7 @@ jobs:
             }
 
       - name: PR本文のフォーマットチェック
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
           script: |
             if (context.actor === 'dependabot[bot]' || context.payload.pull_request.user?.login === 'dependabot[bot]') {

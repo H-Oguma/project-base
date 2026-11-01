@@ -105,18 +105,23 @@ flowchart LR
 
 ## 5. 依存関係セキュリティ運用 & 自動マージ（Dependabot & Security Radar）
 
-本アーキテクチャでは、依存パッケージの脆弱性検知・修正・マージを極小の認知負荷で自律運用する仕組みを完備しています。
+本アーキテクチャでは、依存パッケージの脆弱性検知・修正・マージを極小の認知負荷で自律運用する仕組みに加え、サプライチェーン攻撃を防ぐ厳格な防御ガードレールを完備しています。
 
-### 🛡️ 3つの運用ベストプラクティス
-1. **グループ化アップデート（Grouped Updates）**:
+### 🛡️ 5つの運用ベストプラクティス
+1. **グループ化アップデート & クールダウン（Grouped Updates & Cooldown）**:
    - `.github/dependabot.yml` にて `applies-to: version-updates` と `applies-to: security-updates` を設定。
    - 週次更新PRやセキュリティアラートPRがパッケージごとに乱立せず、エコシステムごとに1つのPRに自動集約されます。
-2. **PR Lint バイパス & Conventional Commits 統一**:
+   - **クールダウン期間（`cooldown`）**: 通常更新（`version-updates`）において、公開直後のゼロデイ攻撃や悪意あるパッケージの即時混入を防ぐため、クールダウン期間（default: 7日、major: 14日、minor: 7日、patch: 3日）を設定しています（※セキュリティ修正は cooldown の影響を受けず即時PR化）。
+2. **言語バージョン整合とDockerマイナー固定**:
+   - バックエンドの Docker ベースイメージ (`python:3.11-slim`) において、意図しない Python マイナーバージョンジャンプ（3.15等）を防ぎ CI（Python 3.11）との乖離を回避するため、`ignore` に Python の `semver-major`/`semver-minor` を指定し、パッチ更新（`3.11.x`）のみを自動追従します。
+3. **GitHub Actions ワークフローの Action SHA ピン留め**:
+   - サードパーティ/公式 Action のタグ書き換え攻撃（悪意あるコードへのタグ差し替え）を物理的に防ぐため、全ワークフロー（`ci.yml`, `pr-lint.yml`, `security-audit.yml`）内の `uses:` はミュータブルなバージョンタグではなく、完全な40文字コミットSHA（`uses: <owner>/<repo>@<sha> # <tag>`）にピン留めされています。
+4. **PR Lint バイパス & Conventional Commits 統一**:
    - `commit-message: prefix: "chore", include: "scope"` により、コミット履歴・PRタイトルが `chore(deps): ...` で統一されます。
    - `.github/workflows/pr-lint.yml` にて `dependabot[bot]` をバイパスし、人間向けテンプレートの必須入力チェックで自動PRが停止するのを防止します。
-3. **安全な自動Approve & Auto-merge**:
-   - `.github/workflows/security-audit.yml` にて `dependabot/fetch-metadata@v2` を連携。
-   - 破壊的変更を含まない非メジャー更新（マイナー・パッチ・セキュリティ修正）は、自動でレビュー承認 (`gh pr review --approve`) と自動スカッシュマージ (`gh pr merge --auto --squash`) がセットされます。CI（テスト・Lint）がパスすると自動的に `main` へ安全に取り込まれます。
+5. **厳格化された自動Approve & Auto-merge**:
+   - `.github/workflows/security-audit.yml` にて `dependabot/fetch-metadata` を連携。
+   - パッチ更新および Docker を除くマイナー更新のみを自動レビュー承認 (`gh pr review --approve`) と自動スカッシュマージ (`gh pr merge --auto --squash`) の対象とします。メジャー更新や Docker のマイナー更新（ランタイム変更リスク）は自動マージ対象外とし、人間またはエージェントの明示的レビューを必須とします。
 
 ### 🌐 他リポジトリへの設定反映コマンド（ワンライナー）
 GitHubの「Auto-merge」「マージ後ブランチ自動削除」「Squashマージ」をCLIから一括で有効化します：
