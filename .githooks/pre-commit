@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# 現在のブランチ名を取得
+BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || echo "HEAD")
+
+# マージコミット（.git/MERGE_HEADが存在）判定
+GIT_DIR=$(git rev-parse --git-dir)
+if [ -f "$GIT_DIR/MERGE_HEAD" ]; then
+    # mainブランチへのマージ時
+    if [ "$BRANCH" = "main" ]; then
+        if [ "${REVIEW_APPROVED:-0}" != "1" ]; then
+            echo "❌ [Guardrail] ワーカーによる自己マージは禁止されています。親エージェント(Reviewer)が git diff を独立レビューした上で REVIEW_APPROVED=1 git merge ... を実行してください。" >&2
+            exit 1
+        fi
+    fi
+    exit 0
+fi
+
+# 通常のコミット時: mainへの直接コミット禁止
+if [ "$BRANCH" = "main" ]; then
+    echo "❌ [Guardrail] mainブランチへの直接コミットは物理的に禁止されています。トピックブランチ(feat/*, fix/*, chore/*, docs/*, refactor/*, test/*)を作成してください。" >&2
+    exit 1
+fi
+
+# ブランチ名のプレフィックス検証
+if ! [[ "$BRANCH" =~ ^(main|(feat|fix|chore|docs|refactor|test|feature|hotfix)/[a-z0-9._-]+)$ ]]; then
+    echo "❌ [Guardrail] 無効なブランチ名 '$BRANCH' です。規則 (feat|fix|chore|docs|refactor|test)/<short-name> に従ってください。" >&2
+    exit 1
+fi
+
+# lint-staged が存在する場合は実行
+if [ -f "node_modules/.bin/lint-staged" ]; then
+    npx lint-staged
+fi
+
+exit 0

@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "🛡️ [Guardrail] Push 前の自己検証 (make check) を実行中..."
+
+if [ -f "Makefile" ] && grep -q "^check:" Makefile; then
+    if ! make check; then
+        echo "❌ [Guardrail] make check がパスしていないため push をブロックしました。" >&2
+        echo "※ AIエージェントへの警告: このエラーを無視して push することは禁止されています。必ず原因を特定し修正してください。" >&2
+        exit 1
+    fi
+else
+    echo "⚠️ [Guardrail] Makefile または check ターゲットが見つかりません。npm test を試行します..."
+    npm test
+fi
+
+echo "✅ [Guardrail] すべての自己検証を通過しました。Push を許可します。"
+exit 0

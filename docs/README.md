@@ -15,6 +15,8 @@
   AIエージェントが定めたルールやワークフローを無視して直接編集してしまう問題への対策として導入されている「Hooks」の仕組みと、過去のトラブル解決についてまとめています。
 
 ## 3. セットアップ・仕様書
+- **[AI-Native 開発ガイドライン & 他リポジトリ導入マニュアル (ai-native-adoption-guide.md)](./setup/ai-native-adoption-guide.md)**
+  物理ガードレール（.githooks）とAI駆動開発の仕組みを、新規・既存のあらゆるリポジトリへ1分で導入するための公式マニュアルです。
 - **[Antigravity 2.0 駆動開発セットアップ Playbook (antigravity-setup-playbook.md)](./setup/antigravity-setup-playbook.md)**
   新しいプロジェクトに Issue 起票 → 実装 → PR → レビュー → リリースの環境を展開するための、AI向けの単体完結版セットアップ手順書です。
 - **[Antigravity 2.0 仕様 (antigravity-2.0-specs.md)](./architecture/antigravity-2.0-specs.md)**

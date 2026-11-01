@@ -11,6 +11,9 @@ Cursor、Windsurf、GitHub Copilot、Cline などのAIアシスタントと協�
 
 ## 🌟 特徴
 
+- **他リポジトリへの簡単導入**: 既存・新規の別プロジェクトにも本仕組み（Gitフック・AI憲章）を1分で移植可能。詳細は **[AI-Native 導入マニュアル](docs/setup/ai-native-adoption-guide.md)** を参照。
+- **ゼロトラスト物理ロック (.githooks)**: mainブランチ直接コミット禁止、承認なしマージ遮断、日本語コミット強制、push前自動テスト検証。
+- **ワンコマンド全方位検証 (Makefile)**: `make check` により、セキュリティ監査 (pip-audit / npm audit)、Ruff、Pytest、Oxlint、Vitest、本番Build を一括検証。
 - **多層防御によるAI統制 (Antigravity 2.0)**: `AGENTS.md`（メタドキュメント/原則）、`.agents/rules/`（規約）、`.agents/hooks.json`（Hooksによる物理的強制）の4層アーキテクチャでAIの暴走・ルール逸脱を機械的に防止。
 - **Issue / PR 駆動開発の自動化**: スキル（`/start`, `/pr`）とHooks連携により、Issue起票からブランチ作成、PR作成、コードレビューまでのフローを標準化・自動化。
 - **マルチエージェント協調**: 実装エージェントとレビューエージェント（`reviewer`）の役割分担により、高品質なコード生成を実現。

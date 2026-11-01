@@ -1,0 +1,135 @@
+name: Multi-Layer Security Radar & Dependabot Automation
+
+on:
+  schedule:
+    # 毎日 09:00 JST (00:00 UTC) に日次セキュリティ監査を実行
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  # ============================================================
+  # 1. Multi-Layer Vulnerability Radar (日次・手動実行)
+  # ============================================================
+  security-radar:
+    name: Multi-Layer Security Radar
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          enable-cache: true
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+
+      - name: Install Root Dependencies
+        run: npm ci
+
+      - name: Install Frontend Dependencies
+        run: cd frontend && npm ci
+
+      - name: Install Backend Dependencies
+        run: cd backend && uv sync
+
+      - name: Layer 1 - Root npm Security Audit (High & Critical)
+        id: root_npm_audit
+        run: npm audit --audit-level=high
+
+      - name: Layer 2 - Backend Python Vulnerability Audit (pip-audit)
+        id: python_audit
+        run: cd backend && uv run pip-audit --timeout 60
+
+      - name: Layer 3 - Frontend npm Security Audit (High & Critical)
+        id: frontend_npm_audit
+        run: cd frontend && npm audit --audit-level=high
+
+      - name: Layer 4 - Auto-Create Security Alert Issue on Failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Checking for existing open security issues..."
+          EXISTING_ISSUES=$(gh issue list --label "type: security" --state open --json number -q '.[].number')
+          if [ -n "$EXISTING_ISSUES" ]; then
+            echo "Already open security issue exists (#$EXISTING_ISSUES). Skipping duplicate issue creation."
+            exit 0
+          fi
+
+          echo "Creating high-priority security issue..."
+          gh issue create \
+            --title "🚨 [Security Alert] 依存パッケージに新たな脆弱性が検出されました" \
+            --label "type: security" \
+            --body "$(cat << 'EOF'
+          ### 🚨 セキュリティレーダー自動検知アラート
+
+          日次セキュリティ監査（Multi-Layer Security Radar）にて、新たな既知の脆弱性が検知されました。
+
+          #### 🔍 検証レイヤー
+          1. **Root npm (npm audit / High & Critical)**: ルート依存関係（husky, commitlint等）の脆弱性
+          2. **Backend Python (pip-audit / PyPA & OSV Advisory)**: バックエンド依存パッケージの脆弱性
+          3. **Frontend npm (npm audit / High & Critical)**: フロントエンド依存パッケージの脆弱性
+
+          #### 🛠️ 推奨される一次対応手順
+          1. ワークフロー実行ログを確認し、検知されたパッケージ名・CVE/GHSA番号を特定する。
+          2. **Root npm**: `npm update <pkg>` または `npm audit fix` を適用。
+          3. **Backend**: `cd backend && uv lock --upgrade-package <pkg>` で脆弱性解消版へ更新。
+          4. **Frontend**: `cd frontend && npm update <pkg>` または `npm audit fix` を適用。
+          5. ローカルで `make check` を実行し、全ゲート通過後に PR を作成して `main` へ反映してください。
+          EOF
+          )"
+
+  # ============================================================
+  # 2. Dependabot Auto-Approve & Auto-Merge (Dependabot PR)
+  # ============================================================
+  dependabot-automerge:
+    name: Dependabot Auto-Approve & Auto-Merge
+    if: github.event_name == 'pull_request' && (github.actor == 'dependabot[bot]' || github.event.pull_request.user.login == 'dependabot[bot]')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Approve and enable auto-merge for non-major updates
+        if: steps.metadata.outputs.update-type != 'version-update:semver-major'
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Approving Dependabot PR for non-major / security update (${{ steps.metadata.outputs.update-type }})..."
+          gh pr review --approve "$PR_URL" || echo "Note: Auto-approve via GITHUB_TOKEN skipped if restricted by repo settings."
+          echo "Enabling auto-merge (squash)..."
+          gh pr merge --auto --squash "$PR_URL"
