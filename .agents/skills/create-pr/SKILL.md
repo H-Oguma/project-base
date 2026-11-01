@@ -21,6 +21,7 @@ Read the following files to understand the PR formatting rules:
 Prepare the PR body string following `.github/PULL_REQUEST_TEMPLATE.md` and `.agents/rules/pr-format.md`.
 You MUST fill in all sections required by the template based on your changes:
 - Check the appropriate checkboxes (change type, impact area).
+- In `## 品質・ドキュメント`, every checkbox MUST be either `- [x]` or `- [N/A]` (leaving `- [ ]` will fail the `PR Lint` CI check). When using `- [N/A]`, fill in the reason on the next line.
 - Link the related Issue using `Closes #<IssueNumber>`.
 - Fill in the specific changes made and the reasons.
 - List the modified files in the table.
