@@ -1,5 +1,5 @@
 # ビルド用ステージ
-FROM python:3.11-slim AS builder
+FROM python:3.15-slim AS builder
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ COPY pyproject.toml ./
 RUN uv sync --no-install-project --no-dev
 
 # 実行用ステージ
-FROM python:3.11-slim
+FROM python:3.15-slim
 
 WORKDIR /app
 
