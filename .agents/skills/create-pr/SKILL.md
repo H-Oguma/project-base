@@ -17,24 +17,22 @@ Read the following files to understand the PR formatting rules:
 - `.github/PULL_REQUEST_TEMPLATE.md`
 - `.agents/rules/pr-format.md`
 
-## 3. Create a Temporary PR Body File
-Create a temporary markdown file (e.g., `tmp_pr_body.md`) containing the PR body.
-You MUST fill in all sections required by the template based on your changes.
+## 3. Prepare the PR Body
+Prepare the PR body string following `.github/PULL_REQUEST_TEMPLATE.md` and `.agents/rules/pr-format.md`.
+You MUST fill in all sections required by the template based on your changes:
 - Check the appropriate checkboxes (change type, impact area).
+- In `## 品質・ドキュメント`, every checkbox MUST be either `- [x]` or `- [N/A]` (leaving `- [ ]` will fail the `PR Lint` CI check). When using `- [N/A]`, fill in the reason on the next line.
 - Link the related Issue using `Closes #<IssueNumber>`.
 - Fill in the specific changes made and the reasons.
 - List the modified files in the table.
 - Include test execution logs in the designated `<details>` block if tests were run.
 
-## 4. Create the Pull Request
-Use the GitHub CLI (`gh`) to create the PR, referencing the temporary file you just created.
-```bash
-gh pr create --title "[<Type>] <Brief Summary>" --body-file tmp_pr_body.md
-```
-Note: Do not use the `--body` argument directly with a short string. You must use `--body-file` and provide a fully formatted body.
-
-## 5. Cleanup
-After the PR is successfully created, remove the temporary file.
-```bash
-rm tmp_pr_body.md
-```
+## 4. Create the Pull Request via GitHub MCP
+Direct execution of `gh pr create` is blocked by the guardrail hook (`.agents/scripts/enforce_pr_format.mjs`).
+You MUST use the GitHub MCP tool `create_pull_request` (`ServerName: "github"`, `ToolName: "create_pull_request"`) after pushing the working branch (`git push -u origin <branch>`):
+- `owner`: Repository owner (e.g., `H-Oguma`)
+- `repo`: Repository name (e.g., `project-base`)
+- `title`: `[<Type>] <Brief Summary>`
+- `head`: Current working branch name
+- `base`: `main`
+- `body`: The fully formatted PR body matching `.github/PULL_REQUEST_TEMPLATE.md`
