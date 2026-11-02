@@ -317,12 +317,12 @@ try {
       }
       allowed = true;
     }
-    if (/^\s*git\s+(pull|fetch)\b/.test(commandLine)) allowed = true;
-    if (/^\s*git\s+(status|log|branch|diff|show|rev-parse|remote)\b/.test(commandLine)) allowed = true;
+    if (/^\s*(?:REVIEW_APPROVED=\S+\s+)?git\s+(merge|push|pull|fetch)\b/.test(commandLine)) allowed = true;
+    if (/^\s*git\s+(status|log|branch|diff|show|rev-parse|remote|switch|checkout)\b/.test(commandLine)) allowed = true;
 
     // Allowed gh commands (gh issue create は全ブランチ共通ガードレールで検証済み)
-    if (/^\s*gh\s+issue\s+(create|list|view|edit)\b/.test(commandLine)) allowed = true;
-    if (/^\s*gh\s+pr\s+(list|view|status)\b/.test(commandLine)) allowed = true;
+    if (/^\s*gh\s+issue\s+(create|list|view|edit|close)\b/.test(commandLine)) allowed = true;
+    if (/^\s*gh\s+pr\s+(list|view|status|merge)\b/.test(commandLine)) allowed = true;
     if (/^\s*gh\s+repo\s+view\b/.test(commandLine)) allowed = true;
     
     // プロジェクト操作系（Issue起票時の自動紐付け等で実行されるため許可）
