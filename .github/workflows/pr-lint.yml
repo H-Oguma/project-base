@@ -180,6 +180,63 @@ jobs:
             }
 
             // ============================================================
+            // 7. 実態乖離チェック (Fact Audit: 実際の変更ファイルとの整合性)
+            // ============================================================
+            try {
+              const files = await github.paginate(github.rest.pulls.listFiles, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.pull_request.number,
+              });
+              const filenames = files.map(f => f.filename);
+              core.info(`PR変更ファイル数: ${filenames.length}`);
+
+              // (1) docsのみの虚偽申告防止
+              // 変更ファイルにドキュメント以外（*.md および docs/ 配下以外）が含まれているか判定
+              const hasNonDocFiles = filenames.some(fn => !fn.endsWith('.md') && !fn.startsWith('docs/'));
+              if (changeTypeSection) {
+                const isDocsChecked = /- \[[xX]\]\s*docs\b/i.test(changeTypeSection);
+                const otherTypesChecked = (changeTypeSection.match(/- \[[xX]\]\s*(feature|bugfix|refactor|chore)\b/gi) || []).length > 0;
+
+                if (hasNonDocFiles && isDocsChecked && !otherTypesChecked) {
+                  errors.push('❌ **変更種別（実態乖離）**: ドキュメント以外のファイル（コード、スクリプト、設定、CI等）が変更されていますが、変更種別で `docs (ドキュメントのみの変更)` のみがチェックされています。実態に即した種別（feature / bugfix / refactor / chore 等）をチェックしてください');
+                }
+              }
+
+              // (2) 影響範囲のチェック漏れ防止
+              if (scopeSection) {
+                // Backend: backend/ 配下の変更
+                const hasBackendChanges = filenames.some(fn => fn.startsWith('backend/'));
+                const isBackendChecked = /- \[[xX]\]\s*backend\b/i.test(scopeSection);
+                if (hasBackendChanges && !isBackendChecked) {
+                  errors.push('❌ **影響範囲（チェック漏れ）**: `backend/` 配下のファイルが変更されていますが、影響範囲の `backend` がチェックされていません');
+                }
+
+                // Frontend: frontend/ 配下の変更
+                const hasFrontendChanges = filenames.some(fn => fn.startsWith('frontend/'));
+                const isFrontendChecked = /- \[[xX]\]\s*frontend\b/i.test(scopeSection);
+                if (hasFrontendChanges && !isFrontendChecked) {
+                  errors.push('❌ **影響範囲（チェック漏れ）**: `frontend/` 配下のファイルが変更されていますが、影響範囲の `frontend` がチェックされていません');
+                }
+
+                // Infra / Config: .github/, .agents/, .githooks/, scripts/, Docker, Makefile, 設定ファイル等
+                const hasInfraChanges = filenames.some(fn =>
+                  fn.startsWith('.github/') ||
+                  fn.startsWith('.agents/') ||
+                  fn.startsWith('.githooks/') ||
+                  fn.startsWith('scripts/') ||
+                  /^(Dockerfile|docker-compose(\.[^.]+)?\.ya?ml|Makefile|package\.json|package-lock\.json|\.gitignore|\.env.*)$/i.test(fn)
+                );
+                const isInfraChecked = /- \[[xX]\]\s*infra\b/i.test(scopeSection);
+                if (hasInfraChanges && !isInfraChecked) {
+                  errors.push('❌ **影響範囲（チェック漏れ）**: インフラ・CI・設定ファイル（.github/, .agents/, .githooks/, Makefile, package.json等）が変更されていますが、影響範囲の `infra` がチェックされていません');
+                }
+              }
+            } catch (err) {
+              core.warning(`変更ファイル一覧の取得・実態照合に失敗しました: ${err.message}`);
+            }
+
+            // ============================================================
             // 結果の出力
             // ============================================================
             if (errors.length > 0) {

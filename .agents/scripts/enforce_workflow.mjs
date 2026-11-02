@@ -58,10 +58,12 @@ try {
     return { isSubIssue, inferredParent };
   }
 
-  // --- TDD & Docs ガードレール (PR作成時) ---
+  // --- TDD & Docs & PR実態乖離ガードレール (PR作成時) ---
   if (toolName === 'call_mcp_tool' && data.toolCall?.args?.ToolName === 'create_pull_request') {
     try {
       const diff = execSync('git diff main --name-only', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] });
+      const mcpArgs = data.toolCall?.args?.Arguments || data.toolCall?.args || {};
+      const prBody = mcpArgs.body || '';
 
       const hasCodeChanges = /(src\/|backend\/|frontend\/)/.test(diff) && !/(docs\/|README)/.test(diff);
       const hasTestChanges = /(test|spec)/i.test(diff);
@@ -72,6 +74,62 @@ try {
         console.log(JSON.stringify({
           decision: 'deny',
           reason: '🚨 [品質ガードレール] プロダクトコードが変更されていますが、テストコードとドキュメントの更新が含まれていません。\nTDD（テスト駆動開発）およびドキュメント更新のルールに違反していませんか？\n本当に不要な場合は、PR本文に不要な理由を明記するか、ダミーのコミット等で回避してください。'
+        }));
+        process.exit(0);
+      }
+
+      // --- 実態乖離チェック (Fact Audit: 実際の変更ファイルとの整合性) ---
+      const diffLines = diff.split('\n').map(l => l.trim()).filter(Boolean);
+
+      // (1) docsのみの虚偽申告防止
+      const hasNonDocFiles = diffLines.some(fn => !fn.endsWith('.md') && !fn.startsWith('docs/'));
+      const isDocsChecked = /- \[[xX]\]\s*docs\b/i.test(prBody);
+      const otherTypesChecked = /- \[[xX]\]\s*(feature|bugfix|refactor|chore)\b/i.test(prBody);
+
+      if (hasNonDocFiles && isDocsChecked && !otherTypesChecked) {
+        console.log(JSON.stringify({
+          decision: 'deny',
+          reason: '🚨 [PR実態乖離ガードレール] 変更ファイルにドキュメント以外のコード・設定・CI等が含まれていますが、PR本文の変更種別で `docs (ドキュメントのみの変更)` のみがチェックされています。\n`git diff main...HEAD --name-status` を確認し、実態に即した変更種別（feature / bugfix / refactor / chore 等）をチェックしてください。'
+        }));
+        process.exit(0);
+      }
+
+      // (2) 影響範囲のチェック漏れ防止
+      // Backend
+      const hasBackendChanges = diffLines.some(fn => fn.startsWith('backend/'));
+      const isBackendChecked = /- \[[xX]\]\s*backend\b/i.test(prBody);
+      if (hasBackendChanges && !isBackendChecked) {
+        console.log(JSON.stringify({
+          decision: 'deny',
+          reason: '🚨 [PR実態乖離ガードレール] `backend/` 配下のファイルが変更されていますが、PR本文の影響範囲で「backend」がチェックされていません。\nPR本文の `## 影響範囲` に `- [x] backend` をチェックしてください。'
+        }));
+        process.exit(0);
+      }
+
+      // Frontend
+      const hasFrontendChanges = diffLines.some(fn => fn.startsWith('frontend/'));
+      const isFrontendChecked = /- \[[xX]\]\s*frontend\b/i.test(prBody);
+      if (hasFrontendChanges && !isFrontendChecked) {
+        console.log(JSON.stringify({
+          decision: 'deny',
+          reason: '🚨 [PR実態乖離ガードレール] `frontend/` 配下のファイルが変更されていますが、PR本文の影響範囲で「frontend」がチェックされていません。\nPR本文の `## 影響範囲` に `- [x] frontend` をチェックしてください。'
+        }));
+        process.exit(0);
+      }
+
+      // Infra / Config
+      const hasInfraChanges = diffLines.some(fn =>
+        fn.startsWith('.github/') ||
+        fn.startsWith('.agents/') ||
+        fn.startsWith('.githooks/') ||
+        fn.startsWith('scripts/') ||
+        /^(Dockerfile|docker-compose(\.[^.]+)?\.ya?ml|Makefile|package\.json|package-lock\.json|\.gitignore|\.env.*)$/i.test(fn)
+      );
+      const isInfraChecked = /- \[[xX]\]\s*infra\b/i.test(prBody);
+      if (hasInfraChanges && !isInfraChecked) {
+        console.log(JSON.stringify({
+          decision: 'deny',
+          reason: '🚨 [PR実態乖離ガードレール] インフラ・CI・設定ファイル（.github/, .agents/, .githooks/, Makefile, package.json等）が変更されていますが、PR本文の影響範囲で「infra」がチェックされていません。\nPR本文の `## 影響範囲` に `- [x] infra` をチェックしてください。'
         }));
         process.exit(0);
       }
