@@ -1,0 +1,89 @@
+name: Sub-issue Auto Linker
+
+on:
+  issues:
+    types: [opened, edited]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  link-sub-issue:
+    name: Link Sub-issue to Parent
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: 親Issueを検出してSub-issueを自動紐付け
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        with:
+          script: |
+            const issue = context.payload.issue;
+            if (!issue) {
+              core.info('Issueイベントペイロードが存在しません');
+              return;
+            }
+
+            const currentIssueNumber = issue.number;
+            const currentIssueId = issue.id;
+            const body = issue.body || '';
+
+            core.info(`Issue #${currentIssueNumber} (ID: ${currentIssueId}) の親Issue参照を解析中...`);
+
+            function extractParentIssueNumber(text) {
+              if (!text) return null;
+
+              // 1. Issueテンプレート形式: ### 親Issue ...
+              const headerMatch = text.match(/###\s*親Issue[^\r\n]*\r?\n+([\s\S]*?)(?:\r?\n###|\r?\n\r?\n|$)/i);
+              if (headerMatch) {
+                const section = headerMatch[1].trim();
+                if (section && !section.includes('_No response_')) {
+                  const numMatch = section.match(/#?(\d+)/);
+                  if (numMatch) return parseInt(numMatch[1], 10);
+                }
+              }
+
+              // 2. インライン形式: 親Issue: #123, 親Issue：#123, Parent: #123, Part of #123 など
+              const inlineMatch = text.match(/(?:親(?:[IＩ]ssue|課題)|Parent(?:\s+Issue)?|Part\s+of)\s*[:：]?\s*#?(\d+)\b/i);
+              if (inlineMatch) {
+                return parseInt(inlineMatch[1], 10);
+              }
+
+              return null;
+            }
+
+            const parentIssueNumber = extractParentIssueNumber(body);
+            if (!parentIssueNumber) {
+              core.info('親Issueの指定は見つかりませんでした。スキップします。');
+              return;
+            }
+
+            if (parentIssueNumber === currentIssueNumber) {
+              core.info(`親Issue番号 (#${parentIssueNumber}) が現在のIssueと同一のためスキップします。`);
+              return;
+            }
+
+            core.info(`親Issue #${parentIssueNumber} を検出しました。Sub-issueとして紐付けを試行します...`);
+
+            try {
+              // GitHub REST API: POST /repos/{owner}/{repo}/issues/{issue_number}/sub_issues
+              await github.request('POST /repos/{owner}/{repo}/issues/{issue_number}/sub_issues', {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: parentIssueNumber,
+                sub_issue_id: currentIssueId,
+                headers: {
+                  'x-github-api-version': '2022-11-28'
+                }
+              });
+              core.info(`✅ 成功: Issue #${currentIssueNumber} を親Issue #${parentIssueNumber} のSub-issueとして紐付けました。`);
+            } catch (error) {
+              const errorMsg = error.message || '';
+              // すでにSub-issueとして紐付いている場合や、親IssueがSub-issue非対応等のケース
+              if (errorMsg.includes('already') || error.status === 422 || error.status === 409) {
+                core.info(`ℹ️ すでに親Issueに紐付けられているか、紐付け不要です: ${errorMsg}`);
+              } else {
+                core.warning(`⚠️ サブIssue紐付けAPI呼び出しでエラーが発生しました (Issue #${parentIssueNumber}): ${errorMsg}`);
+              }
+            }

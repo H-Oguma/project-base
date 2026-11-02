@@ -51,7 +51,7 @@ AIエージェントに外部システムとの連携能力を持たせるため
 本プロジェクトの開発体験を向上させるために、以下のMCPサーバーの導入を各開発者に推奨しています。
 
 - **GitHub MCP Server**
-  - 用途: Issueの検索・起票、PRの操作。
+  - 用途: Issueの検索・親を持たない通常Issueの起票、PRの操作。（※GitHubのSub-issue親子関係メタデータ設定には未対応のため、サブIssue起票時は必ず `gh issue create --parent` を使用）
   - 設定場所: グローバル設定 (`~/.gemini/config/mcp_config.json`)
 - **PostgreSQL / SQLite MCP Server**
   - 用途: データベースのスキーマ確認、ダミーデータのクエリによるバグ調査。

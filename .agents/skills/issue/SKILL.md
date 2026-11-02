@@ -32,14 +32,28 @@ description: >-
 ### 3. Issueの起票 (`gh` コマンド または MCP の使用)
 評価が終わったら、実際にIssueを起票します。必ず評価したラベルを含めてください。
 
-**CLIで起票する場合の例:**
+**【重要】サブIssue（子Issue）起票時のルール:**
+- 親Issueが存在するサブIssueを起票する際は、**必ず GitHub CLI (`gh`) の `--parent <親Issue番号>` オプションを使用**し、GitHub の Sub-issue 機能で親子関係を紐付けてください。
+- **GitHub MCP ツール（`create_issue`）は Sub-issue 機能（`--parent`）に未対応**のため、サブIssue起票時には使用できません（ガードレールによりブロックされます）。
+- 本文にも必ず「`親Issue: #<親Issue番号>`」を明記してください。
+
+**サブIssueを起票する場合の例:**
+```bash
+gh issue create \
+  --parent 100 \
+  --title "[Task]: サブタスク名" \
+  --body "## 概要\n...\n\n親Issue: #100" \
+  --label "enhancement,P2: Normal,Size: S"
+```
+
+**通常のIssue（親Issueなし）をCLIで起票する場合の例:**
 ```bash
 gh issue create \
   --title "[Task]: パスワードリセット機能の追加" \
   --body "## 概要\nログイン画面にパスワードを忘れたユーザーのためのリセット導線を追加する。\n\n## 要件\n- メール送信機能\n- リセット用トークンの発行" \
   --label "enhancement,P2: Normal,Size: M"
 ```
-※ `MCP` ツール（`github` サーバーの `create_issue`）を使用して起票しても構いません。その場合も `labels` 引数に優先度とサイズのラベルを必ず配列で渡してください。
+※ 親Issueを持たない通常のIssueに限り、`MCP` ツール（`github` サーバーの `create_issue`）を使用して起票しても構いません。その場合も `labels` 引数に優先度とサイズのラベルを必ず配列で渡してください。
 
 ### 4. Project への紐付け ★追加手順
 Issueが作成されたら、取得したIssue番号（またはURL）を使って、作成したIssueを「Project 1 (AI駆動開発)」に紐付けてください。

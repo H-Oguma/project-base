@@ -16,6 +16,48 @@ try {
     process.exit(0);
   }
 
+  // 現在の Git ブランチ名を取得
+  let branch = '';
+  try {
+    branch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
+  } catch (e) {
+    // Not in a git repo or error
+    console.log(JSON.stringify({ decision: 'allow' }));
+    process.exit(0);
+  }
+
+  /**
+   * サブIssue作成判定ヘルパー関数
+   * 以下のいずれかに該当する場合にサブIssue作成と判定する:
+   * 1. 現在のブランチ名に issue-<N> が含まれる（既存Issue作業中の派生起票）
+   * 2. タイトルに [Sub-Issue] が含まれる
+   * 3. 本文またはコマンド引数に 親Issue / Parent / Part of #N / ### 親Issue 等が含まれる
+   */
+  function detectSubIssue({ currentBranch = '', title = '', body = '', commandLine = '' } = {}) {
+    // 1. ブランチ名に issue-番号 が含まれているか
+    const branchMatch = currentBranch.match(/issue-(\d+)/i);
+    const branchParent = branchMatch ? branchMatch[1] : null;
+
+    // 2. タイトルに [Sub-Issue] が含まれているか
+    const titleHasSubIssue = /\[sub-?issue\]/i.test(title);
+
+    // 3. 本文またはコマンドラインに親Issue関連キーワードが含まれているか
+    const textToScan = `${body} ${commandLine}`;
+    const hasParentKeyword = /(?:親\s*(?:[IＩ]ssue|課題)|###\s*親Issue|Parent(?:\s+Issue)?|Part\s+of\s*#?\d+)/i.test(textToScan);
+
+    // 推定される親Issue番号の抽出
+    let inferredParent = branchParent;
+    if (!inferredParent) {
+      const parentMatch = textToScan.match(/(?:親(?:[IＩ]ssue|課題)|Parent(?:\s+Issue)?|Part\s+of)\s*[:：]?\s*#?(\d+)\b/i);
+      if (parentMatch) {
+        inferredParent = parentMatch[1];
+      }
+    }
+
+    const isSubIssue = Boolean(branchParent || titleHasSubIssue || hasParentKeyword);
+    return { isSubIssue, inferredParent };
+  }
+
   // --- TDD & Docs ガードレール (PR作成時) ---
   if (toolName === 'call_mcp_tool' && data.toolCall?.args?.ToolName === 'create_pull_request') {
     try {
@@ -38,31 +80,95 @@ try {
     }
   }
 
-  // --- 子Issueの親Issue紐付けガードレール (Issue作成時) ---
+  // --- タスク管理 & サブIssue ガードレール (MCP create_issue 呼び出し時) ---
   if (toolName === 'call_mcp_tool' && data.toolCall?.args?.ToolName === 'create_issue') {
-    try {
-      const branch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
-      const branchIssueMatch = branch.match(/issue-(\d+)/i);
+    const mcpArgs = data.toolCall?.args?.Arguments || data.toolCall?.args || {};
+    const labels = mcpArgs.labels || [];
+    const title = mcpArgs.title || '';
+    const body = mcpArgs.body || '';
 
-      if (branchIssueMatch) {
-        const parentIssueNumber = branchIssueMatch[1];
-        const issueBody = data.toolCall?.args?.body || '';
+    // 優先度（P0〜P3）とサイズ（Size: S/M/L）の必須チェック
+    const hasPriority = labels.some(l => /^P[0-3]/i.test(l));
+    const hasSize = labels.some(l => /^Size:\s*[SML]/i.test(l));
 
-        // 本文に親Issue番号が含まれているかチェック
-        const regex = new RegExp(`#${parentIssueNumber}\\b`);
-        if (!regex.test(issueBody)) {
+    if (!hasPriority || !hasSize) {
+      console.log(JSON.stringify({
+        decision: 'deny',
+        reason: '🚨 [タスク管理ガードレール] Issueを起票する際は、必ず優先度（P0/P1/P2/P3）とサイズ（Size: S/M/L）のラベルを指定してください。\n例: `labels: ["P2: Normal", "Size: S"]`'
+      }));
+      process.exit(0);
+    }
+
+    // サブIssue作成判定
+    const subIssueInfo = detectSubIssue({
+      currentBranch: branch,
+      title,
+      body
+    });
+
+    if (subIssueInfo.isSubIssue) {
+      const parentHint = subIssueInfo.inferredParent ? ` (親Issue: #${subIssueInfo.inferredParent})` : '';
+      const exampleCmd = subIssueInfo.inferredParent
+        ? `gh issue create --parent ${subIssueInfo.inferredParent} --title "${title || '[Task]: サブタスク名'}" --body "${body ? '...' : '## 概要\\n...\\n\\n親Issue: #' + subIssueInfo.inferredParent}" --label "enhancement,P2: Normal,Size: S"`
+        : `gh issue create --parent <親Issue番号> --title "${title || '[Task]: サブタスク名'}" --body "${body ? '...' : '## 概要\\n...\\n\\n親Issue: #<親Issue番号>'}" --label "enhancement,P2: Normal,Size: S"`;
+
+      console.log(JSON.stringify({
+        decision: 'deny',
+        reason: `🚨 [サブIssue親子関係必須] サブIssue${parentHint}の起票が検出されました。\nGitHub MCP の create_issue は Sub-issue（親子関係メタデータ）の設定に対応していません。\n親子関係を正しく紐付けるため、GitHub CLI の \`gh issue create --parent\` を使用して起票してください。\n\n実行例:\n${exampleCmd}`
+      }));
+      process.exit(0);
+    }
+  }
+
+  // --- タスク管理 & サブIssue ガードレール (CLI gh issue create 実行時 - 全ブランチ共通) ---
+  if (toolName === 'run_command') {
+    const commandLine = data.toolCall?.args?.CommandLine || '';
+
+    if (/(?:^|\s|&&|\|\||;)gh\s+issue\s+create\b/.test(commandLine)) {
+      // 優先度とサイズのラベル指定チェック
+      const hasPriority = /(P0|P1|P2|P3)/.test(commandLine);
+      const hasSize = /Size:\s*[SML]/.test(commandLine);
+      if (!hasPriority || !hasSize) {
+        console.log(JSON.stringify({
+          decision: 'deny',
+          reason: '🚨 [タスク管理ガードレール] CLIからIssueを起票する際は、必ず優先度とサイズのラベルを指定してください。\n例: `gh issue create --label "P2: Normal,Size: S"`'
+        }));
+        process.exit(0);
+      }
+
+      // タイトルの抽出（あれば）
+      let issueTitle = '';
+      const titleMatch = commandLine.match(/(?:--title|-t)(?:=|\s+)("[^"]*"|'[^']*'|\S+)/);
+      if (titleMatch) {
+        issueTitle = titleMatch[1].replace(/^["']|["']$/g, '');
+      }
+
+      // サブIssue作成判定
+      const subIssueInfo = detectSubIssue({
+        currentBranch: branch,
+        title: issueTitle,
+        commandLine
+      });
+
+      if (subIssueInfo.isSubIssue) {
+        // --parent オプションが指定されているかチェック（例: --parent 90, --parent #90, --parent="90" 等）
+        const hasParentFlag = /(?:^|\s)--parent(?:=|\s+)(?:['"]?(?:#?\d+|https?:\/\/\S+)['"]?)/.test(commandLine);
+
+        if (!hasParentFlag) {
+          const parentHint = subIssueInfo.inferredParent ? ` (推定される親Issue: #${subIssueInfo.inferredParent})` : '';
+          const exampleCmd = subIssueInfo.inferredParent
+            ? `gh issue create --parent ${subIssueInfo.inferredParent} --title "${issueTitle || '[Task]: サブタスク名'}" --body "..." --label "enhancement,P2: Normal,Size: S"`
+            : `gh issue create --parent <親Issue番号> --title "${issueTitle || '[Task]: サブタスク名'}" --body "..." --label "enhancement,P2: Normal,Size: S"`;
+
           console.log(JSON.stringify({
             decision: 'deny',
-            reason: `🚨 [トレーサビリティ違反] 現在のブランチ (issue-${parentIssueNumber}) からサブIssueを作成しようとしていますが、本文に親Issue番号 (#${parentIssueNumber}) へのリンクが含まれていません。\n孤立したIssue (Orphan Issue) の発生を防ぐため、本文に「親Issue: #${parentIssueNumber}」のように必ずリンクを記載してください。`
+            reason: `🚨 [サブIssue親子関係未設定] サブIssue${parentHint}の起票が検出されましたが、\`--parent\` オプションが指定されていません。\nGitHub の Sub-issue 機能で親子関係を紐付けるため、必ず \`--parent <親Issue番号>\` を指定して実行してください。\n\n実行例:\n${exampleCmd}`
           }));
           process.exit(0);
         }
       }
-    } catch (e) {
-      // ignore git errors
     }
   }
-  // ------------------------------------------
 
   // --- タスクサイズ・管理 ガードレール (ファイル編集時 & コマンド実行時) ---
   let isModifyingTool = ['write_to_file', 'replace_file_content', 'multi_replace_file_content', 'run_command'].includes(toolName);
@@ -75,7 +181,6 @@ try {
 
   if (isModifyingTool) {
     try {
-      const branch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
       const match = branch.match(/issue-(\d+)/i);
 
       // run_commandの場合、ghやgitなどラベル修正や状況確認に必要なコマンドは許可する
@@ -116,23 +221,6 @@ try {
       // ignore errors
     }
   }
-  // ------------------------------------------
-
-  // --- タスク管理ガードレール (Issue作成時) ---
-  if (toolName === 'call_mcp_tool' && data.toolCall?.args?.ToolName === 'create_issue') {
-    const labels = data.toolCall?.args?.labels || [];
-    const hasPriority = labels.some(l => l.startsWith('P0') || l.startsWith('P1') || l.startsWith('P2') || l.startsWith('P3'));
-    const hasSize = labels.some(l => l.startsWith('Size:'));
-
-    if (!hasPriority || !hasSize) {
-      console.log(JSON.stringify({
-        decision: 'deny',
-        reason: '🚨 [タスク管理ガードレール] Issueを起票する際は、必ず優先度（P0/P1/P2/P3）とサイズ（Size: S/M/L）のラベルを指定してください。\n例: `labels: ["P2: Normal", "Size: S"]`'
-      }));
-      process.exit(0);
-    }
-  }
-  // ------------------------------------------
 
   // --- 環境保護ガードレール (全ブランチ共通) ---
   if (toolName === 'run_command') {
@@ -162,17 +250,8 @@ try {
       process.exit(0);
     }
   }
-  // ------------------------------------------
 
-  let branch = '';
-  try {
-    branch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
-  } catch (e) {
-    // Not in a git repo or error
-    console.log(JSON.stringify({ decision: 'allow' }));
-    process.exit(0);
-  }
-
+  // --- ブランチ別ガードレール ---
   if (branch !== 'main' && branch !== 'master') {
     // ブランチ名に issue-番号 が含まれていない場合は作業をブロック
     if (!/issue-\d+/.test(branch)) {
@@ -201,6 +280,7 @@ try {
     process.exit(0);
   }
 
+  // --- main / master ブランチ保護ガードレール ---
   if (['write_to_file', 'replace_file_content', 'multi_replace_file_content'].includes(toolName)) {
     console.error(`[WORKFLOW GUARD] ブランチ '${branch}' でのファイル編集をブロックしました`);
     console.log(JSON.stringify({
@@ -240,35 +320,8 @@ try {
     if (/^\s*git\s+(pull|fetch)\b/.test(commandLine)) allowed = true;
     if (/^\s*git\s+(status|log|branch|diff|show|rev-parse|remote)\b/.test(commandLine)) allowed = true;
 
-    // Allowed gh commands
-    if (/^\s*gh\s+issue\s+(create|list|view)\b/.test(commandLine)) {
-      if (/^\s*gh\s+issue\s+create\b/.test(commandLine)) {
-        const hasPriority = /(P0|P1|P2|P3)/.test(commandLine);
-        const hasSize = /Size:\s*[SML]/.test(commandLine);
-        if (!hasPriority || !hasSize) {
-          console.log(JSON.stringify({
-            decision: 'deny',
-            reason: '🚨 [タスク管理ガードレール] CLIからIssueを起票する際は、必ず優先度とサイズのラベルを指定してください。\n例: `gh issue create --label "P2: Normal,Size: S"`'
-          }));
-          process.exit(0);
-        }
-        // コマンドラインまたはファイル入力などから本文を取得するのは難しいが、
-        // 少なくとも --body 引数に親Issue番号が含まれているかを簡易チェックする
-        const branchIssueMatch = branch.match(/issue-(\d+)/i);
-        if (branchIssueMatch && commandLine.includes('--body')) {
-          const parentIssueNumber = branchIssueMatch[1];
-          const regex = new RegExp(`#${parentIssueNumber}\\b`);
-          if (!regex.test(commandLine)) {
-            console.log(JSON.stringify({
-              decision: 'deny',
-              reason: `🚨 [トレーサビリティ違反] 現在のブランチ (issue-${parentIssueNumber}) からサブIssueをCLIで作成しようとしていますが、--body 内に親Issue番号 (#${parentIssueNumber}) へのリンクが見当たりません。\n孤立したIssueの発生を防ぐため、親Issueへのリンクを記載してください。`
-            }));
-            process.exit(0);
-          }
-        }
-      }
-      allowed = true;
-    }
+    // Allowed gh commands (gh issue create は全ブランチ共通ガードレールで検証済み)
+    if (/^\s*gh\s+issue\s+(create|list|view|edit)\b/.test(commandLine)) allowed = true;
     if (/^\s*gh\s+pr\s+(list|view|status)\b/.test(commandLine)) allowed = true;
     if (/^\s*gh\s+repo\s+view\b/.test(commandLine)) allowed = true;
     
