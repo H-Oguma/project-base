@@ -15,7 +15,10 @@ Issueには `P0: Blocker`, `P1: High`, `P2: Normal`, `P3: Low` のいずれか�
 
 ## 2. 依存関係 (Dependencies)
 - **子Issue優先**: ブロックされているIssue（サブIssueを持つ親Issueなど）には着手せず、ブロックされていない末端のIssue（子Issue）から消化すること。
-- **Issue起票時のルール**: 現在のブランチが `issue-XXX` の場合、ここから新規のIssueを起票する際は、必ず本文に `#XXX`（親Issueへのリンク）を含めて孤立を防ぐこと。
+- **サブIssue起票時のルール（--parent 必須化）**:
+  - 親Issueが存在するサブIssueを作成する際は、**必ず GitHub CLI (`gh`) の `--parent <親Issue番号>` オプションを使用**し、GitHub の Sub-issue 機能で親子関係をメタデータとして紐付けてください。
+  - **GitHub MCP の `create_issue` は Sub-issue 機能（`--parent`）に未対応**のため、サブIssue起票時には使用できません（システムフックによりブロックされます）。
+  - また、本文にも必ず「`親Issue: #XXX`」のように親Issue番号へのリンクを記載してください。
 
 ## 3. サイズ (Size) と 分割義務 ★絶対ルール
 Issueには `Size: S`, `Size: M`, `Size: L` のいずれかが設定されます。
@@ -26,7 +29,7 @@ AIは、`Size: L` が設定されているIssueで**直接コードを書いて�
 `Size: L`（エピック級タスク）の実装を依頼された場合の正しいワークフロー：
 1. `issue-XXX` のブランチを切る。
 2. 必要な調査や設計書の作成（`docs/` への Markdown 追加など）のみを行う。
-3. 実装作業は行わず、この機能を `Size: S` または `Size: M` に収まる複数の「サブIssue」に分割して `gh issue create` で起票する。
+3. 実装作業は行わず、この機能を `Size: S` または `Size: M` に収まる複数の「サブIssue」に分割し、`gh issue create --parent XXX` を使って親Issueと紐付けた上で起票する。
 4. サブIssueが起票できたら、現在の Lサイズの作業は完了とし、起票したサブIssue群をユーザーに報告する。
 
 ※もし `Size: L` のIssueで直接コード（`src/`, `backend/`, `frontend/` 等）を編集しようとすると、システムフックによって強制的にブロックされます。

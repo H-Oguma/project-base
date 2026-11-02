@@ -18,10 +18,16 @@ gh issue list --search "your keywords" --state all --limit 10
 Review the results to see if the problem was already solved or if there are existing workarounds or related discussions.
 
 ## 2. Create a GitHub Issue
-Prefer using the GitHub MCP tool `create_issue` if available. Otherwise, use the GitHub CLI (`gh`) to create a new issue for the task.
-```bash
-gh issue create --title "[Brief Task Title]" --body "[Detailed description of the task based on user request]"
-```
+- **親Issueが存在するサブIssueの場合（重要）:**
+  GitHub MCP ツール（`create_issue`）は Sub-issue 機能（`--parent`）に未対応のため、**必ず GitHub CLI (`gh`) の `--parent <親Issue番号>` を使用して起票してください**（ワークフックにより強制されます）。
+  ```bash
+  gh issue create --parent <親Issue番号> --title "[Task]: [Brief Subtask Title]" --body "## 概要\n[詳細な説明]\n\n親Issue: #<親Issue番号>" --label "enhancement,P2: Normal,Size: S"
+  ```
+- **親Issueのない通常の新規Issueの場合:**
+  GitHub MCP ツール `create_issue` が利用可能であれば優先して使用し、なければ GitHub CLI (`gh`) で作成します。
+  ```bash
+  gh issue create --title "[Brief Task Title]" --body "[Detailed description of the task based on user request]" --label "enhancement,P2: Normal,Size: M"
+  ```
 If an issue for this task already exists, skip this step and use the existing issue number.
 
 **IMPORTANT:** Once the issue is created, you MUST link it to the project board using the following command:
