@@ -1,6 +1,6 @@
 # AI Architecture & Workflow Design
 
-> Last Updated: 2026-11-02
+> Last Updated: 2026-11-23
 
 本プロジェクトは、AIアシスタント（Antigravity, Cursor 等）との協働を前提とした「AI駆動開発（AI-Driven Development）」のためのベースアーキテクチャを採用しています。
 
@@ -20,7 +20,7 @@ Antigravity 2.0 の仕様に基づき、以下のファイル群がエージェ�
   - `task-init` (`/start`): Issue起票・Project紐付け・作業ブランチ作成の初期化フロー
   - `issue` (`/issue`): 優先度・サイズ自動評価付きのバックログIssue起票
   - `create-pr` (`/pr`): テンプレート準拠のPull Request作成
-  - `advisor-planner`: Thin Orchestrator パターンによるサブエージェント委譲・コスト最適化
+  - `advisor-planner`: Plan-Execute / `invoke_subagent` / `swarm` の3段階ルーティングによるモデル・コンテキスト最適化
   - `agents-md-management` (`/agents-md`): `AGENTS.md` と実装の乖離を採点・監査する `Improver` モードと、セッションの学びを肥大化させずに適切なルールファイルへ反映する `Revise` モード
 - **`.agents/scripts/`**: エージェントやHooksが利用する補助的なスクリプト群（`enforce_workflow.mjs` 等）です。
 
